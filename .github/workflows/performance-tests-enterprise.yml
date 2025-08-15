@@ -467,16 +467,13 @@ jobs:
         EOF
     
     - name: Setup Pages
-      if: github.ref == 'refs/heads/main'
       uses: actions/configure-pages@v4
     
     - name: Upload to GitHub Pages
-      if: github.ref == 'refs/heads/main'
       uses: actions/upload-pages-artifact@v3
       with:
         path: ./dashboard-deploy
     
     - name: Deploy to GitHub Pages
-      if: github.ref == 'refs/heads/main'
       id: deployment
       uses: actions/deploy-pages@v4
