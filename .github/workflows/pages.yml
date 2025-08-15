@@ -15,21 +15,25 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: "pages-${{ github.ref }}"
   cancel-in-progress: false
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x, 22.x, 24.x]
+      fail-fast: false
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
     
-    - name: Setup Node.js
+    - name: Setup Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
-        node-version: '20.x'
+        node-version: ${{ matrix.node-version }}
         cache: 'npm'
     
     - name: Install dependencies
@@ -137,19 +141,68 @@ jobs:
     - name: Setup Pages
       uses: actions/configure-pages@v4
     
-    - name: Upload to GitHub Pages
-      uses: actions/upload-pages-artifact@v3
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
       with:
+        name: pages-build-node-${{ matrix.node-version }}
         path: docs/
+        retention-days: 1
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download all build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./all-builds
+    
+    - name: Setup Node.js (latest)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Aggregate results from all versions
+      run: |
+        mkdir -p docs
+        
+        # Copy base documentation structure from the first available build
+        FIRST_BUILD=$(find all-builds -name "pages-build-node-*" -type d | head -1)
+        if [ -d "$FIRST_BUILD" ]; then
+          cp -r "$FIRST_BUILD"/* docs/
+        fi
+        
+        # Merge results from all Node.js versions
+        for build_dir in all-builds/pages-build-node-*/; do
+          if [ -d "$build_dir" ]; then
+            echo "Processing build from: $build_dir"
+            # Copy any version-specific results
+            cp -r "$build_dir"/* docs/ 2>/dev/null || true
+          fi
+        done
+        
+        # Generate comprehensive comparison report
+        node src/report-generator.js || echo "Report generator not available, using existing docs"
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs/
+    
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
