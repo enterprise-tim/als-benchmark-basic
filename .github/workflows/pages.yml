@@ -1,0 +1,155 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_run:
+    workflows: ["AsyncLocalStorage Benchmark"]
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Download latest benchmark results
+      if: github.event_name == 'workflow_run'
+      uses: actions/download-artifact@v4
+      with:
+        name: version-comparison
+        path: ./latest-results
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+    
+    - name: Run benchmarks for pages (if no existing results)
+      if: github.event_name != 'workflow_run'
+      run: |
+        npm run benchmark
+        npm run memory-test
+        npm run generate-report
+    
+    - name: Copy latest results to docs
+      if: github.event_name == 'workflow_run'
+      run: |
+        if [ -d "./latest-results" ]; then
+          cp -r ./latest-results/* ./docs/ 2>/dev/null || true
+        fi
+    
+    - name: Build documentation site
+      run: |
+        # Ensure docs directory exists
+        mkdir -p docs
+        
+        # Generate the main index.html if it doesn't exist
+        if [ ! -f "docs/index.html" ]; then
+          node src/generate-docs.js
+        fi
+        
+        # Copy any additional assets
+        cp -r results/* docs/ 2>/dev/null || true
+        
+        # Ensure we have some content
+        if [ ! -f "docs/index.html" ]; then
+          cat > docs/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>AsyncLocalStorage Performance Analysis</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; }
+                .container { max-width: 1200px; margin: 0 auto; }
+                .header { text-align: center; margin-bottom: 40px; }
+                .results { display: grid; gap: 20px; margin-top: 30px; }
+                .card { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff; }
+                .metric { display: flex; justify-content: space-between; margin: 10px 0; }
+                .metric-name { font-weight: 600; }
+                .metric-value { font-family: monospace; }
+                .warning { border-left-color: #ffc107; }
+                .danger { border-left-color: #dc3545; }
+                .success { border-left-color: #28a745; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>AsyncLocalStorage Performance Analysis</h1>
+                    <p>Comprehensive performance and memory analysis of Node.js AsyncLocalStorage across versions</p>
+                </div>
+                
+                <div class="card">
+                    <h2>About This Analysis</h2>
+                    <p>This site provides detailed performance benchmarks for Node.js AsyncLocalStorage, comparing overhead across different versions and usage patterns.</p>
+                    
+                    <h3>Test Categories</h3>
+                    <ul>
+                        <li><strong>Performance Benchmarks:</strong> Time overhead comparison with and without AsyncLocalStorage</li>
+                        <li><strong>Memory Profiling:</strong> Memory usage analysis and leak detection</li>
+                        <li><strong>Concurrent Testing:</strong> Performance under concurrent load</li>
+                        <li><strong>Version Comparison:</strong> Cross-version analysis of improvements</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h2>Quick Start</h2>
+                    <p>To run these benchmarks yourself:</p>
+                    <pre><code>git clone https://github.com/tobrien/async-node-stats.git
+        cd async-node-stats
+        npm install
+        npm run benchmark
+        npm run memory-test</code></pre>
+                </div>
+                
+                <div class="card">
+                    <h2>Latest Results</h2>
+                    <p>Benchmark results are automatically updated when new tests are run. Check the repository for the latest JSON data files in the <code>results/</code> directory.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        EOF
+        fi
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  # Isolated benchmark testing for different Node.js versions
+  benchmark-node16:
+    build:
+      context: .
+      dockerfile: Dockerfile.benchmark
+      args:
+        NODE_VERSION: "16"
+    image: async-node-stats:node16
+    container_name: benchmark-node16
+    volumes:
+      - ./results:/app/results
+      - ./src:/app/src:ro
+    environment:
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=4096 --no-warnings
+      - UV_THREADPOOL_SIZE=32
+    cpus: 2
+    memory: 4g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    command: ["node", "--max-old-space-size=4096", "--expose-gc", "--no-compilation-cache", "--predictable", "src/benchmark.js"]
+
+  benchmark-node18:
+    build:
+      context: .
+      dockerfile: Dockerfile.benchmark
+      args:
+        NODE_VERSION: "18"
+    image: async-node-stats:node18
+    container_name: benchmark-node18
+    volumes:
+      - ./results:/app/results
+      - ./src:/app/src:ro
+    environment:
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=4096 --no-warnings
+      - UV_THREADPOOL_SIZE=32
+    cpus: 2
+    memory: 4g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    command: ["node", "--max-old-space-size=4096", "--expose-gc", "--no-compilation-cache", "--predictable", "src/benchmark.js"]
+
+  benchmark-node20:
+    build:
+      context: .
+      dockerfile: Dockerfile.benchmark
+      args:
+        NODE_VERSION: "20"
+    image: async-node-stats:node20
+    container_name: benchmark-node20
+    volumes:
+      - ./results:/app/results
+      - ./src:/app/src:ro
+    environment:
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=4096 --no-warnings
+      - UV_THREADPOOL_SIZE=32
+    cpus: 2
+    memory: 4g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    command: ["node", "--max-old-space-size=4096", "--expose-gc", "--no-compilation-cache", "--predictable", "src/benchmark.js"]
+
+  benchmark-node22:
+    build:
+      context: .
+      dockerfile: Dockerfile.benchmark
+      args:
+        NODE_VERSION: "22"
+    image: async-node-stats:node22
+    container_name: benchmark-node22
+    volumes:
+      - ./results:/app/results
+      - ./src:/app/src:ro
+    environment:
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=4096 --no-warnings
+      - UV_THREADPOOL_SIZE=32
+    cpus: 2
+    memory: 4g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    command: ["node", "--max-old-space-size=4096", "--expose-gc", "--no-compilation-cache", "--predictable", "src/benchmark.js"]
+
+  benchmark-node24:
+    build:
+      context: .
+      dockerfile: Dockerfile.benchmark
+      args:
+        NODE_VERSION: "24"
+    image: async-node-stats:node24
+    container_name: benchmark-node24
+    volumes:
+      - ./results:/app/results
+      - ./src:/app/src:ro
+    environment:
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=4096 --no-warnings
+      - UV_THREADPOOL_SIZE=32
+    cpus: 2
+    memory: 4g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    command: ["node", "--max-old-space-size=4096", "--expose-gc", "--no-compilation-cache", "--predictable", "src/benchmark.js"]
+
+  # Statistical analysis service
+  analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile.benchmark
+      args:
+        NODE_VERSION: "22"
+    image: async-node-stats:analyzer
+    container_name: benchmark-analyzer
+    volumes:
+      - ./results:/app/results
+      - ./src:/app/src:ro
+    environment:
+      - NODE_ENV=production
+    command: ["node", "src/statistical-analyzer.js"]
+    depends_on:
+      - benchmark-node16
+      - benchmark-node18
+      - benchmark-node20
+      - benchmark-node22
+      - benchmark-node24

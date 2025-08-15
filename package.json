@@ -1,0 +1,35 @@
+{
+  "name": "async-node-stats",
+  "version": "1.0.0",
+  "description": "Performance benchmarks for AsyncLocalStorage overhead analysis across Node.js versions",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "benchmark": "node --max-old-space-size=8192 --expose-gc src/benchmark.js",
+    "memory-test": "node --max-old-space-size=8192 --expose-gc --trace-gc src/memory-test.js",
+    "benchmark-optimized": "node --max-old-space-size=8192 --expose-gc --no-compilation-cache --predictable --single-threaded-gc src/benchmark.js",
+    "memory-test-verbose": "node --max-old-space-size=8192 --expose-gc --trace-gc --trace-gc-verbose src/memory-test.js",
+    "test-all": "npm run benchmark && npm run memory-test",
+    "test-all-optimized": "npm run benchmark-optimized && npm run memory-test-verbose",
+    "generate-report": "node src/report-generator.js",
+    "compare-versions": "node src/version-comparison.js",
+    "serve-docs": "npx http-server docs -p 8080",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "asynclocalstorage",
+    "performance",
+    "nodejs",
+    "benchmark",
+    "overhead"
+  ],
+  "author": "Tim O'Brien",
+  "license": "MIT",
+  "devDependencies": {
+    "benchmark": "^2.1.4"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

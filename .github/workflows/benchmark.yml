@@ -1,0 +1,191 @@
+name: AsyncLocalStorage Benchmark
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      node_versions:
+        description: 'Node.js versions to test (comma-separated)'
+        required: false
+        default: '16.20.2,18.19.1,20.11.0,22.0.0'
+      run_memory_tests:
+        description: 'Run memory profiling tests'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x, 22.x, 24.x]
+      fail-fast: false
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run benchmark tests
+      run: |
+        echo "Node.js version: $(node --version)"
+        echo "npm version: $(npm --version)"
+        npm run benchmark
+    
+    - name: Run memory profiling tests
+      if: ${{ github.event.inputs.run_memory_tests != 'false' }}
+      run: |
+        node --expose-gc src/memory-test.js
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results-node-${{ matrix.node-version }}
+        path: |
+          results/
+          !results/versions/
+        retention-days: 30
+    
+    - name: Generate performance summary
+      run: |
+        echo "## Performance Summary for Node.js ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Find the latest benchmark result
+        LATEST_BENCHMARK=$(ls -t results/benchmark_*.json | head -1)
+        if [ -f "$LATEST_BENCHMARK" ]; then
+          echo "### Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          jq '.benchmarks[] | {name: .name, overhead: .overhead.timePercent, memoryOverhead: .overhead.memoryRSSBytes}' "$LATEST_BENCHMARK" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Find the latest memory result
+        LATEST_MEMORY=$(ls -t results/memory_*.json | head -1)
+        if [ -f "$LATEST_MEMORY" ]; then
+          echo "### Memory Analysis" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          jq '.memoryLeakTest.analysis // "No memory leak test results"' "$LATEST_MEMORY" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+  compare-versions:
+    runs-on: ubuntu-latest
+    needs: benchmark
+    if: always()
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download all benchmark results
+      uses: actions/download-artifact@v4
+      with:
+        path: ./downloaded-results
+    
+    - name: Setup Node.js (latest)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Generate comparison report
+      run: |
+        mkdir -p results/comparison
+        
+        # Merge all results
+        for dir in downloaded-results/*/; do
+          if [ -d "$dir" ]; then
+            cp -r "$dir"/* results/comparison/ 2>/dev/null || true
+          fi
+        done
+        
+        # Generate comparison
+        node src/report-generator.js
+    
+    - name: Upload comparison results
+      uses: actions/upload-artifact@v4
+      with:
+        name: version-comparison
+        path: |
+          results/comparison/
+          docs/
+        retention-days: 30
+
+  performance-regression:
+    runs-on: ubuntu-latest
+    needs: benchmark
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download benchmark results
+      uses: actions/download-artifact@v4
+      with:
+        name: benchmark-results-node-20.x
+        path: ./pr-results
+    
+    - name: Checkout main branch
+      uses: actions/checkout@v4
+      with:
+        ref: main
+        path: ./main-branch
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Run baseline benchmark (main branch)
+      working-directory: ./main-branch
+      run: |
+        npm ci
+        npm run benchmark
+        mkdir -p ../baseline-results
+        cp results/benchmark_*.json ../baseline-results/
+    
+    - name: Compare performance
+      run: |
+        # This is a simplified comparison - in a real scenario you'd want more sophisticated analysis
+        echo "## Performance Regression Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        BASELINE=$(ls baseline-results/benchmark_*.json | head -1)
+        CURRENT=$(ls pr-results/benchmark_*.json | head -1)
+        
+        if [ -f "$BASELINE" ] && [ -f "$CURRENT" ]; then
+          echo "Comparing performance between main branch and PR..." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Baseline (main branch)" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          jq '.benchmarks[] | {name: .name, overhead: .overhead.timePercent}' "$BASELINE" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Current (PR)" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          jq '.benchmarks[] | {name: .name, overhead: .overhead.timePercent}' "$CURRENT" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ Could not find benchmark files for comparison" >> $GITHUB_STEP_SUMMARY
+        fi

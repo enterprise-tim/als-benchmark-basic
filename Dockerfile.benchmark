@@ -1,0 +1,40 @@
+# Docker container for isolated AsyncLocalStorage performance testing
+FROM node:22-slim
+
+# Install system dependencies for performance testing
+RUN apt-get update && apt-get install -y \
+    htop \
+    procps \
+    bc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a dedicated user for running benchmarks
+RUN useradd -ms /bin/bash benchmark
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies as root, then switch to benchmark user
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Copy source code
+COPY src/ ./src/
+COPY scripts/ ./scripts/
+
+# Create results directory
+RUN mkdir -p results && chown -R benchmark:benchmark /app
+
+# Switch to benchmark user
+USER benchmark
+
+# Set environment for stable testing
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=4096 --no-warnings"
+ENV UV_THREADPOOL_SIZE=32
+
+# Default command
+CMD ["node", "--max-old-space-size=4096", "--expose-gc", "--no-compilation-cache", "--predictable", "--single-threaded-gc", "src/benchmark.js"]

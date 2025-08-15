@@ -1,0 +1,220 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC for trend monitoring
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      node_versions:
+        description: 'Node.js versions to test (comma-separated)'
+        required: false
+        default: '18.19.1,20.11.0,22.0.0,24.6.0'
+      test_iterations:
+        description: 'Number of test iterations for statistical significance'
+        required: false
+        default: '5'
+
+jobs:
+  performance-tests:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        node-version: [18.19.1, 20.11.0, 22.0.0, 24.6.0]
+        runner: 
+          # GitHub Larger Runners (requires Team/Enterprise plan)
+          - ubuntu-latest-8-cores  # 8 vCPUs, 32 GB RAM, 300 GB SSD
+          # Fallback to standard runner if larger runners not available
+          # - ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Configure system for performance testing
+      run: |
+        # Set CPU governor to performance mode (if available)
+        echo "Configuring system for consistent performance testing..."
+        
+        # Disable swap to prevent memory paging
+        sudo swapoff -a || true
+        
+        # Set process priority
+        sudo renice -n -10 $$
+        
+        # Show system info for debugging
+        echo "System Information:"
+        cat /proc/cpuinfo | grep "model name" | head -1
+        cat /proc/meminfo | grep "MemTotal"
+        nproc
+        
+        # Clear system caches
+        sudo sync
+        sudo echo 3 > /proc/sys/vm/drop_caches || true
+    
+    - name: Run performance benchmarks (Multiple iterations)
+      run: |
+        mkdir -p results/ci
+        
+        # Run multiple iterations for statistical significance
+        ITERATIONS=${{ github.event.inputs.test_iterations || 5 }}
+        
+        for i in $(seq 1 $ITERATIONS); do
+          echo "Running iteration $i of $ITERATIONS..."
+          
+          # Clear caches between runs
+          node --expose-gc -e "global.gc && global.gc()"
+          
+          # Run benchmark with optimized flags
+          node --max-old-space-size=8192 --expose-gc --no-compilation-cache --predictable --single-threaded-gc src/benchmark.js
+          
+          # Move results to iteration-specific directory
+          mkdir -p "results/ci/node_${{ matrix.node-version }}/iteration_$i"
+          mv results/benchmark_*.json "results/ci/node_${{ matrix.node-version }}/iteration_$i/" || true
+          
+          # Brief pause between iterations
+          sleep 5
+        done
+    
+    - name: Generate statistical analysis
+      run: |
+        # Create statistical summary across iterations
+        node --max-old-space-size=4096 -e "
+        const fs = require('fs');
+        const path = require('path');
+        
+        const nodeVersion = '${{ matrix.node-version }}';
+        const iterationsDir = \`results/ci/node_\${nodeVersion}\`;
+        const iterations = fs.readdirSync(iterationsDir).filter(d => d.startsWith('iteration_'));
+        
+        console.log(\`Analyzing \${iterations.length} iterations for Node.js \${nodeVersion}\`);
+        
+        const allResults = iterations.map(iter => {
+          const files = fs.readdirSync(path.join(iterationsDir, iter));
+          const resultFile = files.find(f => f.startsWith('benchmark_'));
+          if (resultFile) {
+            return JSON.parse(fs.readFileSync(path.join(iterationsDir, iter, resultFile), 'utf8'));
+          }
+          return null;
+        }).filter(Boolean);
+        
+        if (allResults.length === 0) {
+          console.log('No valid results found');
+          process.exit(1);
+        }
+        
+        // Calculate statistics for each benchmark
+        const stats = {};
+        const firstResult = allResults[0];
+        
+        firstResult.benchmarks.forEach((benchmark, idx) => {
+          const name = benchmark.name;
+          const overheads = allResults.map(r => r.benchmarks[idx]?.overhead?.timePercent).filter(v => v !== undefined);
+          
+          if (overheads.length > 0) {
+            const sorted = overheads.slice().sort((a, b) => a - b);
+            const mean = overheads.reduce((a, b) => a + b) / overheads.length;
+            const variance = overheads.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / overheads.length;
+            const stddev = Math.sqrt(variance);
+            const median = sorted[Math.floor(sorted.length / 2)];
+            const min = Math.min(...overheads);
+            const max = Math.max(...overheads);
+            
+            stats[name] = {
+              mean: mean.toFixed(2),
+              median: median.toFixed(2),
+              stddev: stddev.toFixed(2),
+              min: min.toFixed(2),
+              max: max.toFixed(2),
+              samples: overheads.length,
+              confidenceInterval95: [(mean - 1.96 * stddev / Math.sqrt(overheads.length)).toFixed(2), 
+                                     (mean + 1.96 * stddev / Math.sqrt(overheads.length)).toFixed(2)]
+            };
+          }
+        });
+        
+        const summary = {
+          nodeVersion,
+          testDate: new Date().toISOString(),
+          iterations: allResults.length,
+          statistics: stats,
+          rawResults: allResults
+        };
+        
+        fs.writeFileSync(\`results/ci/node_\${nodeVersion}_statistical_summary.json\`, JSON.stringify(summary, null, 2));
+        console.log('Statistical summary generated:', JSON.stringify(stats, null, 2));
+        "
+    
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-results-node-${{ matrix.node-version }}
+        path: results/ci/
+        retention-days: 30
+    
+    - name: Comment PR with results (if PR)
+      if: github.event_name == 'pull_request'
+      run: |
+        # Extract key metrics for PR comment
+        SUMMARY_FILE="results/ci/node_${{ matrix.node-version }}_statistical_summary.json"
+        
+        if [ -f "$SUMMARY_FILE" ]; then
+          echo "## Performance Results - Node.js ${{ matrix.node-version }}" >> pr_comment.md
+          echo "" >> pr_comment.md
+          echo "| Benchmark | Mean Overhead | Std Dev | 95% CI |" >> pr_comment.md
+          echo "|-----------|---------------|---------|--------|" >> pr_comment.md
+          
+          node -e "
+          const summary = JSON.parse(require('fs').readFileSync('$SUMMARY_FILE', 'utf8'));
+          Object.entries(summary.statistics).forEach(([name, stats]) => {
+            console.log(\`| \${name} | \${stats.mean}% | \${stats.stddev}% | [\${stats.confidenceInterval95[0]}%, \${stats.confidenceInterval95[1]}%] |\`);
+          });
+          " >> pr_comment.md
+          
+          echo "" >> pr_comment.md
+          echo "_Results based on ${{ github.event.inputs.test_iterations || 5 }} iterations_" >> pr_comment.md
+        fi
+    
+    - name: Performance regression check
+      if: github.event_name == 'pull_request'
+      run: |
+        # This would compare against baseline results from main branch
+        # Implementation depends on where you store baseline results
+        echo "Performance regression check would go here"
+        echo "Compare current results against baseline from main branch"
+
+  aggregate-results:
+    needs: performance-tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all results
+      uses: actions/download-artifact@v4
+      with:
+        path: all-results/
+    
+    - name: Generate cross-version comparison
+      run: |
+        # Aggregate results across all Node.js versions
+        echo "Generating cross-version performance comparison..."
+        # Implementation for comparing results across Node.js versions
+        
+    - name: Upload aggregated results
+      uses: actions/upload-artifact@v4
+      with:
+        name: aggregated-performance-results
+        path: all-results/
+        retention-days: 90

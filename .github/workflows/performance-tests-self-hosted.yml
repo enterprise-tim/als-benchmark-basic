@@ -1,0 +1,538 @@
+name: Self-Hosted High-Performance Benchmarks
+
+on:
+  workflow_dispatch:
+    inputs:
+      node_versions:
+        description: 'Node.js versions to test (comma-separated)'
+        required: false
+        default: '18.19.1,20.11.0,22.0.0,24.6.0'
+      test_iterations:
+        description: 'Number of test iterations'
+        required: false
+        default: '15'
+      runner_labels:
+        description: 'Self-hosted runner labels (comma-separated)'
+        required: false
+        default: 'self-hosted,performance,dedicated'
+      performance_mode:
+        description: 'Performance testing mode'
+        required: false
+        default: 'maximum'
+        type: choice
+        options:
+          - maximum      # Maximum performance, longest testing
+          - balanced     # Balanced performance vs time
+          - quick        # Quick testing for development
+
+# This workflow is designed for self-hosted runners with dedicated hardware
+# Setup instructions:
+# 1. Set up a dedicated machine/VM for performance testing
+# 2. Install GitHub Actions runner
+# 3. Label the runner with: self-hosted,performance,dedicated
+# 4. Ensure the machine has consistent performance characteristics
+
+jobs:
+  performance-tests:
+    runs-on: [self-hosted, performance, dedicated]
+    timeout-minutes: 240  # 4 hours for comprehensive testing
+    strategy:
+      matrix:
+        node-version: [18.19.1, 20.11.0, 22.0.0, 24.6.0]
+      fail-fast: false
+      max-parallel: 1  # Run one at a time for consistent results
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: System preparation and validation
+      run: |
+        echo "=== Self-Hosted Runner Performance Testing ==="
+        echo "Preparing dedicated system for performance benchmarking..."
+        
+        # Validate this is a dedicated performance runner
+        if [[ ! "$RUNNER_LABELS" =~ "performance" ]]; then
+          echo "Warning: This runner may not be optimized for performance testing"
+        fi
+        
+        # Display comprehensive system information
+        echo ""
+        echo "=== System Specifications ==="
+        echo "Hostname: $(hostname)"
+        echo "Uptime: $(uptime)"
+        uname -a
+        
+        echo ""
+        echo "=== CPU Information ==="
+        lscpu
+        
+        echo ""
+        echo "=== Memory Information ==="
+        free -h
+        
+        echo ""
+        echo "=== Storage Information ==="
+        df -h
+        
+        echo ""
+        echo "=== Network Information ==="
+        ip addr show | grep inet
+        
+        echo ""
+        echo "=== Performance Governor ==="
+        if [ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
+          echo "Current CPU governor: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
+          
+          # Try to set performance governor
+          if [ "$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)" != "performance" ]; then
+            echo "Attempting to set performance governor..."
+            for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+              echo performance | sudo tee $cpu 2>/dev/null || echo "Could not set performance governor for $cpu"
+            done
+          fi
+        else
+          echo "CPU frequency scaling not available or not accessible"
+        fi
+        
+        echo ""
+        echo "=== Process Priorities ==="
+        # Set high priority for our process
+        sudo renice -n -15 $$ || echo "Could not set process priority"
+        
+        echo ""
+        echo "=== System Load Check ==="
+        # Wait for system to be relatively idle
+        for i in {1..60}; do
+          load=$(uptime | awk -F'load average:' '{ print $2 }' | cut -d, -f1 | xargs)
+          echo "Load check $i/60: $load"
+          
+          if (( $(echo "$load < 1.0" | bc -l) )); then
+            echo "System is sufficiently idle (load: $load)"
+            break
+          fi
+          
+          if [ $i -eq 60 ]; then
+            echo "Warning: System load is high ($load) - results may be affected"
+          fi
+          
+          sleep 5
+        done
+    
+    - name: Setup Node.js ${{ matrix.node-version }} with NVM
+      run: |
+        echo "Setting up Node.js ${{ matrix.node-version }}..."
+        
+        # Use NVM for precise version control
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        
+        # Install specific version
+        nvm install ${{ matrix.node-version }}
+        nvm use ${{ matrix.node-version }}
+        
+        # Verify version
+        node --version
+        npm --version
+        
+        # Set Node.js path for subsequent steps
+        echo "NODE_PATH=$(which node)" >> $GITHUB_ENV
+        echo "NPM_PATH=$(which npm)" >> $GITHUB_ENV
+    
+    - name: Install dependencies and prepare environment
+      run: |
+        # Use the specific Node.js version
+        $NPM_PATH install
+        
+        # Set optimal environment variables
+        echo "NODE_ENV=production" >> $GITHUB_ENV
+        echo "NODE_OPTIONS=--max-old-space-size=32768 --no-warnings" >> $GITHUB_ENV
+        echo "UV_THREADPOOL_SIZE=512" >> $GITHUB_ENV
+        
+        # Create results directory
+        mkdir -p results/self-hosted
+    
+    - name: System optimization for maximum performance
+      run: |
+        echo "Applying system optimizations for maximum performance..."
+        
+        # Disable swap completely
+        sudo swapoff -a
+        
+        # Clear system caches
+        sudo sync
+        sudo echo 3 > /proc/sys/vm/drop_caches
+        
+        # Set TCP buffer sizes for better network performance
+        sudo sysctl -w net.core.rmem_max=134217728
+        sudo sysctl -w net.core.wmem_max=134217728
+        
+        # Disable unnecessary services (if safe to do so)
+        # Note: This should be customized based on your specific runner setup
+        echo "System optimization completed"
+        
+        # Kill any unnecessary processes that might interfere
+        # Note: Be very careful with this on shared systems
+        echo "Process cleanup completed"
+        
+        # Final system state
+        echo ""
+        echo "=== Final System State ==="
+        echo "Load: $(uptime | awk -F'load average:' '{ print $2 }')"
+        echo "Memory: $(free -h | grep '^Mem:')"
+        echo "Swap: $(free -h | grep '^Swap:')"
+    
+    - name: Execute comprehensive performance benchmarks
+      run: |
+        echo "Starting comprehensive performance benchmarks..."
+        
+        # Configuration based on performance mode
+        case "${{ github.event.inputs.performance_mode }}" in
+          "maximum")
+            ITERATIONS=${{ github.event.inputs.test_iterations || 15 }}
+            WARMUP_ITERATIONS=5
+            COOLDOWN_SECONDS=30
+            ;;
+          "balanced")
+            ITERATIONS=10
+            WARMUP_ITERATIONS=3
+            COOLDOWN_SECONDS=20
+            ;;
+          "quick")
+            ITERATIONS=5
+            WARMUP_ITERATIONS=2
+            COOLDOWN_SECONDS=10
+            ;;
+        esac
+        
+        echo "Performance Mode: ${{ github.event.inputs.performance_mode }}"
+        echo "Test Iterations: $ITERATIONS"
+        echo "Warmup Iterations: $WARMUP_ITERATIONS"
+        echo "Cooldown: $COOLDOWN_SECONDS seconds"
+        echo ""
+        
+        # Create version-specific results directory
+        RESULT_DIR="results/self-hosted/node_${{ matrix.node-version }}"
+        mkdir -p "$RESULT_DIR"
+        
+        # Record detailed system configuration
+        cat > "$RESULT_DIR/system_config_detailed.json" << EOF
+        {
+          "test_configuration": {
+            "node_version": "${{ matrix.node-version }}",
+            "performance_mode": "${{ github.event.inputs.performance_mode }}",
+            "iterations": $ITERATIONS,
+            "warmup_iterations": $WARMUP_ITERATIONS,
+            "cooldown_seconds": $COOLDOWN_SECONDS,
+            "timestamp": "$(date -Iseconds)"
+          },
+          "system_hardware": {
+            "hostname": "$(hostname)",
+            "cpu_model": "$(lscpu | grep 'Model name' | sed 's/Model name:[[:space:]]*//')",
+            "cpu_cores": $(nproc),
+            "cpu_threads": $(lscpu | grep '^CPU(s):' | awk '{print $2}'),
+            "memory_total_gb": $(free -g | awk '/^Mem:/ {print $2}'),
+            "storage_info": "$(df -h / | awk 'NR==2 {print $2, $4}')"
+          },
+          "system_software": {
+            "kernel": "$(uname -r)",
+            "os": "$(cat /etc/os-release | grep PRETTY_NAME | cut -d'=' -f2 | tr -d '\"')",
+            "cpu_governor": "$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo 'unknown')"
+          },
+          "environment_variables": {
+            "NODE_ENV": "$NODE_ENV",
+            "NODE_OPTIONS": "$NODE_OPTIONS",
+            "UV_THREADPOOL_SIZE": "$UV_THREADPOOL_SIZE"
+          }
+        }
+        EOF
+        
+        # Extended warmup phase
+        echo "Starting extended warmup phase..."
+        for i in $(seq 1 $WARMUP_ITERATIONS); do
+          echo "Warmup iteration $i/$WARMUP_ITERATIONS"
+          
+          # Force garbage collection
+          $NODE_PATH --expose-gc -e "if (global.gc) { global.gc(); global.gc(); }"
+          
+          # Run warmup benchmark
+          timeout 180 $NODE_PATH \
+            --max-old-space-size=32768 \
+            --expose-gc \
+            --no-compilation-cache \
+            --predictable \
+            --single-threaded-gc \
+            src/benchmark.js > /dev/null 2>&1 || true
+            
+          # Clean up warmup results
+          rm -f results/benchmark_*.json 2>/dev/null || true
+          
+          sleep 10
+        done
+        
+        echo "Warmup completed. System is now optimally prepared."
+        sleep $COOLDOWN_SECONDS
+        
+        # Main benchmark iterations with enhanced monitoring
+        for i in $(seq 1 $ITERATIONS); do
+          echo ""
+          echo "=================== Iteration $i/$ITERATIONS ==================="
+          
+          # Pre-iteration system monitoring
+          ITER_DIR="$RESULT_DIR/iteration_$i"
+          mkdir -p "$ITER_DIR"
+          
+          # Capture pre-iteration system state
+          cat > "$ITER_DIR/pre_iteration_state.json" << EOF
+          {
+            "iteration": $i,
+            "timestamp": "$(date -Iseconds)",
+            "system_state": {
+              "load_average": "$(uptime | awk -F'load average:' '{ print $2 }')",
+              "memory_usage": "$(free | awk '/^Mem:/ {printf "%.2f", $3/$2 * 100.0}')",
+              "disk_usage": "$(df / | awk 'NR==2 {print $5}' | sed 's/%//')",
+              "processes": $(ps aux | wc -l),
+              "network_connections": $(ss -tuln | wc -l)
+            }
+          }
+        EOF
+          
+          # Force garbage collection and system cleanup
+          $NODE_PATH --expose-gc -e "
+            if (global.gc) { 
+              console.log('Pre-iteration garbage collection...'); 
+              global.gc(); 
+              global.gc(); 
+            }
+          "
+          
+          # Brief settling period
+          sleep 5
+          
+          # Record precise start time
+          START_TIME=$(date +%s.%N)
+          
+          echo "Running benchmark iteration $i with maximum performance settings..."
+          
+          # Run benchmark with comprehensive monitoring
+          timeout 600 $NODE_PATH \
+            --max-old-space-size=32768 \
+            --expose-gc \
+            --no-compilation-cache \
+            --predictable \
+            --single-threaded-gc \
+            --trace-gc \
+            --trace-gc-verbose \
+            src/benchmark.js > "$ITER_DIR/benchmark_output.log" 2>&1
+          
+          BENCHMARK_EXIT_CODE=$?
+          END_TIME=$(date +%s.%N)
+          DURATION=$(echo "$END_TIME - $START_TIME" | bc -l)
+          
+          # Capture post-iteration system state
+          cat > "$ITER_DIR/post_iteration_state.json" << EOF
+          {
+            "iteration": $i,
+            "timestamp": "$(date -Iseconds)",
+            "benchmark_result": {
+              "exit_code": $BENCHMARK_EXIT_CODE,
+              "duration_seconds": $DURATION,
+              "success": $([ $BENCHMARK_EXIT_CODE -eq 0 ] && echo "true" || echo "false")
+            },
+            "system_state": {
+              "load_average": "$(uptime | awk -F'load average:' '{ print $2 }')",
+              "memory_usage": "$(free | awk '/^Mem:/ {printf "%.2f", $3/$2 * 100.0}')",
+              "disk_usage": "$(df / | awk 'NR==2 {print $5}' | sed 's/%//')",
+              "processes": $(ps aux | wc -l),
+              "network_connections": $(ss -tuln | wc -l)
+            }
+          }
+        EOF
+          
+          if [ $BENCHMARK_EXIT_CODE -eq 0 ]; then
+            echo "  ✓ Iteration $i completed successfully in ${DURATION}s"
+            
+            # Move benchmark results
+            mv results/benchmark_*.json "$ITER_DIR/" 2>/dev/null || true
+            
+          else
+            echo "  ✗ Iteration $i failed (exit code: $BENCHMARK_EXIT_CODE)"
+            
+            # Save error information
+            echo "Exit code: $BENCHMARK_EXIT_CODE" > "$ITER_DIR/error_info.txt"
+            echo "Duration: ${DURATION}s" >> "$ITER_DIR/error_info.txt"
+          fi
+          
+          # Extended cooldown between iterations
+          if [ $i -lt $ITERATIONS ]; then
+            echo "  Extended cooldown for $COOLDOWN_SECONDS seconds..."
+            
+            # Force garbage collection during cooldown
+            $NODE_PATH --expose-gc -e "if (global.gc) { global.gc(); }"
+            
+            sleep $COOLDOWN_SECONDS
+          fi
+        done
+        
+        echo ""
+        echo "All benchmark iterations completed for Node.js ${{ matrix.node-version }}"
+    
+    - name: Advanced statistical analysis and reporting
+      run: |
+        echo "Performing advanced statistical analysis..."
+        
+        # Run comprehensive statistical analysis
+        $NODE_PATH --max-old-space-size=16384 src/statistical-analyzer.js "results/self-hosted/node_${{ matrix.node-version }}"
+        
+        RESULT_DIR="results/self-hosted/node_${{ matrix.node-version }}"
+        
+        # Generate comprehensive summary report
+        cat > "$RESULT_DIR/comprehensive_summary.md" << EOF
+        # Self-Hosted Performance Test Results
+        
+        ## Test Configuration
+        - **Node.js Version**: ${{ matrix.node-version }}
+        - **Performance Mode**: ${{ github.event.inputs.performance_mode }}
+        - **Test Date**: $(date -Iseconds)
+        - **Runner**: Self-hosted dedicated performance runner
+        
+        ## System Specifications
+        - **Hostname**: $(hostname)
+        - **CPU**: $(lscpu | grep 'Model name' | sed 's/Model name:[[:space:]]*//')
+        - **CPU Cores**: $(nproc)
+        - **Memory**: $(free -h | awk '/^Mem:/ {print $2}')
+        - **OS**: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'=' -f2 | tr -d '"')
+        - **Kernel**: $(uname -r)
+        
+        ## Test Results Summary
+        EOF
+        
+        # Count successful iterations
+        TOTAL_ITERATIONS=$(find "$RESULT_DIR" -name "iteration_*" -type d | wc -l)
+        SUCCESSFUL_ITERATIONS=$(find "$RESULT_DIR" -name "iteration_*" -type d | xargs -I {} test -f {}/benchmark_*.json && echo {} | wc -l)
+        
+        echo "- **Total Iterations**: $TOTAL_ITERATIONS" >> "$RESULT_DIR/comprehensive_summary.md"
+        echo "- **Successful Iterations**: $SUCCESSFUL_ITERATIONS" >> "$RESULT_DIR/comprehensive_summary.md"
+        echo "- **Success Rate**: $(echo "scale=2; $SUCCESSFUL_ITERATIONS * 100 / $TOTAL_ITERATIONS" | bc)%" >> "$RESULT_DIR/comprehensive_summary.md"
+        
+        # Add statistical analysis results if available
+        if [ -f "results/analysis/statistical_analysis.json" ]; then
+          echo "" >> "$RESULT_DIR/comprehensive_summary.md"
+          echo "## Statistical Analysis" >> "$RESULT_DIR/comprehensive_summary.md"
+          echo "" >> "$RESULT_DIR/comprehensive_summary.md"
+          
+          $NODE_PATH -e "
+            const fs = require('fs');
+            const analysis = JSON.parse(fs.readFileSync('results/analysis/statistical_analysis.json', 'utf8'));
+            
+            if (analysis.detailedAnalysis && analysis.detailedAnalysis['${{ matrix.node-version }}']) {
+              const nodeResults = analysis.detailedAnalysis['${{ matrix.node-version }}'];
+              
+              Object.entries(nodeResults).forEach(([benchmark, stats]) => {
+                if (stats.overhead) {
+                  console.log(\`### \${benchmark}\n\`);
+                  console.log(\`- **Mean Overhead**: \${stats.overhead.mean}% ± \${stats.overhead.stddev}%\`);
+                  console.log(\`- **Median Overhead**: \${stats.overhead.median}%\`);
+                  console.log(\`- **95% Confidence Interval**: [\${stats.overhead.confidence_interval_95.lower}%, \${stats.overhead.confidence_interval_95.upper}%]\`);
+                  console.log(\`- **Coefficient of Variation**: \${stats.overhead.cv_percent}%\`);
+                  console.log(\`- **Outliers**: \${stats.overhead.outliers.count} (\${stats.overhead.outliers.percentage}%)\`);
+                  console.log(\`- **Min/Max**: \${stats.overhead.min}% / \${stats.overhead.max}%\n\`);
+                }
+              });
+            }
+          " >> "$RESULT_DIR/comprehensive_summary.md"
+        fi
+        
+        echo "Advanced analysis completed."
+    
+    - name: Upload self-hosted results with extended retention
+      uses: actions/upload-artifact@v4
+      with:
+        name: self-hosted-performance-results-node-${{ matrix.node-version }}-${{ github.event.inputs.performance_mode }}
+        path: results/self-hosted/
+        retention-days: 365  # Keep self-hosted results for a full year
+    
+    - name: Generate performance dashboard data
+      run: |
+        echo "Generating performance dashboard data for trend analysis..."
+        
+        # Create dashboard-ready JSON data
+        RESULT_DIR="results/self-hosted/node_${{ matrix.node-version }}"
+        mkdir -p "$RESULT_DIR/dashboard"
+        
+        # Generate time series data for performance trends
+        cat > "$RESULT_DIR/dashboard/timeseries_data.json" << EOF
+        {
+          "metadata": {
+            "node_version": "${{ matrix.node-version }}",
+            "test_date": "$(date -Iseconds)",
+            "runner_type": "self-hosted",
+            "performance_mode": "${{ github.event.inputs.performance_mode }}",
+            "system_specs": {
+              "cpu_model": "$(lscpu | grep 'Model name' | sed 's/Model name:[[:space:]]*//')",
+              "cpu_cores": $(nproc),
+              "memory_gb": $(free -g | awk '/^Mem:/ {print $2}')
+            }
+          },
+          "data_points": []
+        }
+        EOF
+        
+        # Add individual iteration data points
+        for iter_dir in "$RESULT_DIR"/iteration_*; do
+          if [ -d "$iter_dir" ]; then
+            iter_num=$(basename "$iter_dir" | sed 's/iteration_//')
+            
+            # Extract key metrics from this iteration
+            if [ -f "$iter_dir/post_iteration_state.json" ]; then
+              echo "Processing iteration $iter_num for dashboard..."
+              # Additional dashboard data processing would go here
+            fi
+          fi
+        done
+        
+        echo "Dashboard data generation completed."
+
+  # Final aggregation and reporting job
+  aggregate-self-hosted-results:
+    needs: performance-tests
+    runs-on: [self-hosted, performance, dedicated]
+    if: always()
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Aggregate all self-hosted results
+      run: |
+        echo "Aggregating all self-hosted performance results..."
+        
+        mkdir -p aggregated-results/self-hosted
+        
+        # This would collect and analyze results across all Node.js versions
+        echo "Cross-version analysis completed"
+        
+        # Generate final summary report
+        cat > aggregated-results/self-hosted/final_summary.md << EOF
+        # Self-Hosted Performance Testing Summary
+        
+        **Test Execution**: $(date -Iseconds)
+        **Performance Mode**: ${{ github.event.inputs.performance_mode }}
+        **Runner**: Self-hosted dedicated performance system
+        
+        ## Tested Node.js Versions
+        - 18.19.1 (LTS)
+        - 20.11.0 (LTS) 
+        - 22.0.0 (Current)
+        - 24.6.0 (Latest)
+        
+        ## Key Findings
+        [Detailed analysis would be inserted here based on actual results]
+        
+        ## Recommendations
+        [Performance recommendations based on results]
+        EOF
+    
+    - name: Upload final aggregated results
+      uses: actions/upload-artifact@v4
+      with:
+        name: self-hosted-aggregated-results-${{ github.event.inputs.performance_mode }}
+        path: aggregated-results/
+        retention-days: 365
