@@ -13,7 +13,7 @@ on:
       node_versions:
         description: 'Node.js versions to test (comma-separated)'
         required: false
-        default: '16.20.2,18.19.1,20.11.0,22.0.0'
+        default: '16.20.2,18.19.1,20.11.0,22.18.0'
       run_memory_tests:
         description: 'Run memory profiling tests'
         required: false
@@ -22,7 +22,7 @@ on:
 
 jobs:
   benchmark:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-4-cores
     strategy:
       matrix:
         node-version: [16.x, 18.x, 20.x, 22.x, 24.x]
@@ -85,7 +85,7 @@ jobs:
         fi
 
   compare-versions:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-4-cores
     needs: benchmark
     if: always()
     
@@ -131,7 +131,7 @@ jobs:
         retention-days: 30
 
   performance-regression:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-4-cores
     needs: benchmark
     if: github.event_name == 'pull_request'
     

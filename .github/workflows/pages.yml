@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-4-cores
     if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     
     steps:
@@ -108,7 +108,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-4-cores
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

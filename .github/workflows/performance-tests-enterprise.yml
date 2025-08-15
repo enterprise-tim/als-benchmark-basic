@@ -11,7 +11,7 @@ on:
       node_versions:
         description: 'Node.js versions to test (comma-separated)'
         required: false
-        default: '18.19.1,20.11.0,22.0.0,24.6.0'
+        default: '18.19.1,20.11.0,22.18.0,24.6.0'
       test_iterations:
         description: 'Number of test iterations for statistical significance'
         required: false
@@ -19,14 +19,10 @@ on:
       runner_type:
         description: 'Runner type for performance testing'
         required: false
-        default: 'ubuntu-latest-16-cores'
+        default: 'ubuntu-latest-4-cores'
         type: choice
         options:
           - ubuntu-latest-4-cores   # 4 vCPUs, 16 GB RAM, 150 GB SSD
-          - ubuntu-latest-8-cores   # 8 vCPUs, 32 GB RAM, 300 GB SSD  
-          - ubuntu-latest-16-cores  # 16 vCPUs, 64 GB RAM, 600 GB SSD
-          - ubuntu-latest-32-cores  # 32 vCPUs, 128 GB RAM, 1200 GB SSD
-          - ubuntu-latest-64-cores  # 64 vCPUs, 256 GB RAM, 2040 GB SSD
 
 permissions:
   contents: read
@@ -35,11 +31,11 @@ permissions:
 
 jobs:
   performance-tests:
-    runs-on: ${{ github.event.inputs.runner_type || 'ubuntu-latest-16-cores' }}
+    runs-on: ${{ github.event.inputs.runner_type || 'ubuntu-latest-4-cores' }}
     timeout-minutes: 120  # Increased timeout for comprehensive testing
     strategy:
       matrix:
-        node-version: [18.19.1, 20.11.0, 22.0.0, 24.6.0]
+        node-version: [18.19.1, 20.11.0, 22.18.0, 24.6.0]
       fail-fast: false  # Continue testing other versions if one fails
     
     steps:
@@ -144,7 +140,7 @@ jobs:
         mkdir -p results/enterprise
         
         # Enhanced benchmark configuration
-        ITERATIONS=${{ github.event.inputs.test_iterations || 10 }}
+        ITERATIONS=${{ github.event.inputs.test_iterations || 2 }}
         WARMUP_ITERATIONS=3
         COOLDOWN_SECONDS=15
         
@@ -154,7 +150,7 @@ jobs:
         echo "  Warmup iterations: $WARMUP_ITERATIONS"
         echo "  Cooldown between iterations: $COOLDOWN_SECONDS seconds"
         echo "  Node.js version: ${{ matrix.node-version }}"
-        echo "  Runner type: ${{ github.event.inputs.runner_type || 'ubuntu-latest-16-cores' }}"
+        echo "  Runner type: ${{ github.event.inputs.runner_type || 'ubuntu-latest-4-cores' }}"
         echo ""
         
         # Create version-specific results directory
@@ -164,7 +160,7 @@ jobs:
         # Record system configuration
         cat > "$RESULT_DIR/system_config.json" << EOF
         {
-          "runner_type": "${{ github.event.inputs.runner_type || 'ubuntu-latest-16-cores' }}",
+          "runner_type": "${{ github.event.inputs.runner_type || 'ubuntu-latest-4-cores' }}",
           "node_version": "${{ matrix.node-version }}",
           "test_iterations": $ITERATIONS,
           "warmup_iterations": $WARMUP_ITERATIONS,
@@ -351,7 +347,7 @@ jobs:
     - name: Upload enterprise results
       uses: actions/upload-artifact@v4
       with:
-        name: enterprise-performance-results-node-${{ matrix.node-version }}-${{ github.event.inputs.runner_type || 'ubuntu-latest-16-cores' }}
+        name: enterprise-performance-results-node-${{ matrix.node-version }}-${{ github.event.inputs.runner_type || 'ubuntu-latest-4-cores' }}
         path: results/enterprise/
         retention-days: 90  # Keep enterprise results longer
     
@@ -377,7 +373,7 @@ jobs:
 
   aggregate-enterprise-results:
     needs: performance-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-4-cores
     if: always()  # Run even if some tests failed
     environment:
       name: github-pages
@@ -408,11 +404,11 @@ jobs:
         {
           "test_run": {
             "timestamp": "$(date -Iseconds)",
-            "runner_type": "${{ github.event.inputs.runner_type || 'ubuntu-latest-16-cores' }}",
+            "runner_type": "${{ github.event.inputs.runner_type || 'ubuntu-latest-4-cores' }}",
             "trigger": "${{ github.event_name }}",
             "iterations_per_version": ${{ github.event.inputs.test_iterations || 10 }}
           },
-          "node_versions": ["18.19.1", "20.11.0", "22.0.0", "24.6.0"],
+          "node_versions": ["18.19.1", "20.11.0", "22.18.0", "24.6.0"],
           "results_available": true
         }
         EOF

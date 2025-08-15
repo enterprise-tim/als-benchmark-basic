@@ -1,0 +1,39 @@
+# Shared workflow configuration
+# This file defines common configuration values that can be referenced across workflows
+
+name: Shared Configuration
+
+# This workflow doesn't run on its own - it's just for configuration reference
+on:
+  workflow_call:
+    outputs:
+      default-runner:
+        description: "Default runner type for all workflows"
+        value: ubuntu-latest-4-cores
+      node-versions:
+        description: "Standard Node.js versions to test"
+        value: "16.20.2,18.19.1,20.11.0,22.18.0,24.6.0"
+      timeout-minutes:
+        description: "Default timeout for jobs"
+        value: "60"
+
+# Configuration constants that can be referenced in other workflows
+env:
+  DEFAULT_RUNNER: ubuntu-latest-4-cores
+  STANDARD_NODE_VERSIONS: "16.20.2,18.19.1,20.11.0,22.18.0,24.6.0"
+  DEFAULT_TIMEOUT: 60
+  ENTERPRISE_TIMEOUT: 120
+
+jobs:
+  # This is a dummy job that never runs - just for documentation
+  config-reference:
+    if: false
+    runs-on: ubuntu-latest-4-cores
+    steps:
+    - name: Configuration Reference
+      run: |
+        echo "This workflow provides shared configuration for:"
+        echo "- Default runner: ubuntu-latest-4-cores"
+        echo "- Standard Node.js versions: 16.20.2,18.19.1,20.11.0,22.18.0,24.6.0"
+        echo "- Default timeout: 60 minutes"
+        echo "- Enterprise timeout: 120 minutes"

@@ -17,15 +17,29 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Node.js versions to test
-VERSIONS=(
-    "16.20.2"   # LTS - First version with AsyncLocalStorage stable
-    "18.19.1"   # LTS - Performance improvements
-    "20.11.0"   # LTS - Latest stable
-    "21.7.3"    # Current - Latest features
-    "22.0.0"    # Latest - Cutting edge
-    "24.6.0"    # Latest LTS - Most recent
-)
+# Node.js versions to test (loaded from centralized config)
+# To update versions, edit config/node-versions.json
+load_versions() {
+    if [ -f "scripts/get-node-versions.js" ]; then
+        # Use centralized configuration
+        mapfile -t VERSIONS < <(node scripts/get-node-versions.js list all)
+        echo -e "${GREEN}Loaded ${#VERSIONS[@]} versions from centralized config${NC}"
+    else
+        # Fallback to hardcoded versions if config script is not available
+        VERSIONS=(
+            "16.20.2"   # LTS - First version with AsyncLocalStorage stable
+            "18.19.1"   # LTS - Performance improvements
+            "20.11.0"   # LTS - Latest stable
+            "21.7.3"    # Current - Latest features
+            "22.18.0"   # Latest 22.x - Latest stable in 22.x series
+            "24.6.0"    # Latest LTS - Most recent
+        )
+        echo -e "${YELLOW}Using fallback hardcoded versions${NC}"
+    fi
+}
+
+# Load versions at startup
+load_versions
 
 # Node.js Performance Tuning Configuration
 # These settings ensure consistent and optimal performance testing across versions
