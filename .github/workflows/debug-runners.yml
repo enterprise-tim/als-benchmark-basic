@@ -1,0 +1,55 @@
+name: Debug Available Runners
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug-standard-runner:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Show system info on standard runner
+      run: |
+        echo "=== Standard GitHub Runner Info ==="
+        echo "Runner name: $RUNNER_NAME"
+        echo "Runner OS: $RUNNER_OS"
+        echo "Runner arch: $RUNNER_ARCH"
+        echo "Runner workspace: $RUNNER_WORKSPACE"
+        echo ""
+        echo "System specs:"
+        nproc
+        free -h
+        df -h
+        lscpu | grep "Model name"
+        
+  # Uncomment these jobs one by one to test different runner labels
+  # that might be available in your enterprise
+  
+  # debug-larger-runner-1:
+  #   runs-on: ubuntu-latest-4-cores
+  #   steps:
+  #   - name: Show larger runner info
+  #     run: |
+  #       echo "=== 4-Core Runner Info ==="
+  #       echo "Runner name: $RUNNER_NAME"
+  #       nproc
+  #       free -h
+        
+  # debug-larger-runner-2:
+  #   runs-on: ubuntu-latest-8-cores
+  #   steps:
+  #   - name: Show 8-core runner info
+  #     run: |
+  #       echo "=== 8-Core Runner Info ==="
+  #       echo "Runner name: $RUNNER_NAME"
+  #       nproc
+  #       free -h
+        
+  # debug-enterprise-runner:
+  #   runs-on: [self-hosted, linux, enterprise]
+  #   steps:
+  #   - name: Show enterprise runner info
+  #     run: |
+  #       echo "=== Enterprise Runner Info ==="
+  #       echo "Runner name: $RUNNER_NAME"
+  #       nproc
+  #       free -h

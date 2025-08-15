@@ -1,0 +1,10 @@
+{
+  "test_run": {
+    "timestamp": "2025-08-15T21:56:32+00:00",
+    "runner_type": "ubuntu-latest-16-cores",
+    "trigger": "workflow_dispatch",
+    "iterations_per_version": 10
+  },
+  "node_versions": ["18.19.1", "20.11.0", "22.0.0", "24.6.0"],
+  "results_available": true
+}

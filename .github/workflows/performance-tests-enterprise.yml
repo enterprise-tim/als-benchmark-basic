@@ -421,3 +421,50 @@ jobs:
           all-enterprise-results/
           enterprise-dashboard/
         retention-days: 180  # Keep enterprise aggregated results for 6 months
+    
+    - name: Deploy Dashboard to GitHub Pages (if main branch)
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Create dashboard deployment directory
+        mkdir -p dashboard-deploy
+        
+        # Copy dashboard HTML
+        cp docs/enterprise-dashboard.html dashboard-deploy/index.html
+        
+        # Copy results as JSON files for dashboard to load
+        cp -r all-enterprise-results/ dashboard-deploy/
+        cp -r enterprise-dashboard/ dashboard-deploy/
+        
+        # Create a simple landing page with download links
+        cat > dashboard-deploy/results.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Enterprise Results</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                .download-link { 
+                    display: block; 
+                    margin: 10px 0; 
+                    padding: 10px; 
+                    background: #f0f0f0; 
+                    text-decoration: none; 
+                    border-radius: 5px;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Enterprise Performance Results</h1>
+            <p>Latest benchmark results from enterprise runners:</p>
+            <a href="index.html" class="download-link">📊 View Interactive Dashboard</a>
+        </body>
+        </html>
+        EOF
+    
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dashboard-deploy
+        destination_dir: enterprise-results
