@@ -55,12 +55,16 @@
             background: var(--light-bg);
             padding: 1rem 0;
             border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         
         .nav-links {
             display: flex;
             gap: 2rem;
             list-style: none;
+            flex-wrap: wrap;
         }
         
         .nav-links a {
@@ -74,6 +78,11 @@
         
         .nav-links a:hover {
             background-color: rgba(0, 123, 255, 0.1);
+        }
+        
+        .nav-links a.active {
+            background-color: var(--primary-color);
+            color: white;
         }
         
         main {
@@ -237,14 +246,16 @@
     <nav>
         <div class="container">
             <ul class="nav-links">
+                <li><a href="index.html" class="active">Performance Dashboard</a></li>
+                <li><a href="version-analysis.html">Version Analysis</a></li>
+                <li><a href="getting-started.html">Getting Started</a></li>
+                <li><a href="nested-als.html">Nested ALS Guide</a></li>
+                <li><a href="enterprise-dashboard.html">Enterprise Dashboard</a></li>
+                <li><a href="raw-data.html">Raw Data & Resources</a></li>
                 <li><a href="#overview">Overview</a></li>
                 <li><a href="#performance">Performance</a></li>
                 <li><a href="#memory">Memory</a></li>
-                <li><a href="#analysis">Analysis</a></li>
-                <li><a href="getting-started.html">Getting Started</a></li>
-                <li><a href="nested-als.html">Nested ALS Guide</a></li>
                 <li><a href="#recommendations">Recommendations</a></li>
-                <li><a href="#raw-data">Raw Data</a></li>
             </ul>
         </div>
     </nav>
@@ -373,12 +384,7 @@ npm start all</div>
                 </div>
             </section>
             
-            <section id="analysis" class="section">
-                <h2>Node.js Version Analysis</h2>
-                <div id="analysis-content" class="card">
-                    <div class="loading">Loading analysis...</div>
-                </div>
-            </section>
+
             
             <section id="recommendations" class="section">
                 <h2>Recommendations</h2>
@@ -387,80 +393,7 @@ npm start all</div>
                 </div>
             </section>
             
-            <section id="raw-data" class="section">
-                <h2>Raw Data & Resources</h2>
-                
-                <div class="card">
-                    <h3>📁 Project Structure</h3>
-                    <div class="code-block">async-node-stats/
-├── src/
-│   ├── benchmark.js       # Core performance benchmarks
-│   ├── memory-test.js     # Memory profiling tests
-│   ├── report-generator.js # Report generation
-│   ├── generate-docs.js   # Documentation site generator
-│   └── index.js          # Main CLI interface
-├── .github/workflows/
-│   ├── benchmark.yml     # Automated testing
-│   └── pages.yml         # GitHub Pages deployment
-├── results/              # Test results (JSON)
-├── docs/                # Generated documentation
-├── test-versions.sh     # Multi-version testing script
-└── README.md</div>
-                </div>
-                
-                <div class="card">
-                    <h3>📊 Available Data Files</h3>
-                    <ul id="data-files">
-                        <li><a href="detailed-results.json">Detailed Results (JSON)</a> - Complete benchmark and memory test results</li>
-                        <li><a href="version-comparison.json">Version Comparison (JSON)</a> - Cross-version performance analysis</li>
-                        <li><a href="chart-data.json">Chart Data (JSON)</a> - Processed data for visualizations</li>
-                        <li><a href="SUMMARY.md">Summary Report (Markdown)</a> - Human-readable analysis summary</li>
-                        <li><a href="NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md">Node.js Version Analysis (Markdown)</a> - Detailed version-by-version changes</li>
-                    </ul>
-                </div>
-                
-                <div class="card">
-                    <h3>🤖 GitHub Actions Integration</h3>
-                    <p>This project includes automated testing workflows:</p>
-                    <ul>
-                        <li><strong>Benchmark Workflow:</strong> Triggers on push, PR, and weekly schedule</li>
-                        <li><strong>Multi-Version Testing:</strong> Tests across Node.js 16.x, 18.x, 20.x, 22.x, 24.x</li>
-                        <li><strong>Performance Regression Detection:</strong> Detects performance regressions in PRs</li>
-                        <li><strong>GitHub Pages Deployment:</strong> Automatically deploys results to GitHub Pages</li>
-                    </ul>
-                </div>
-                
-                <div class="card">
-                    <h3>🔧 Run Your Own Tests</h3>
-                    <p>To run these benchmarks yourself:</p>
-                    <div class="code-block"># Clone and setup
-git clone https://github.com/tobrien/async-node-stats.git
-cd async-node-stats
-npm install
 
-# Run all tests
-npm start all
-
-# Or run individual tests
-npm run benchmark      # Performance only
-npm run memory-test    # Memory analysis only
-npm run generate-report # Generate reports
-
-# Multi-version testing (requires NVM)
-./test-versions.sh</div>
-                </div>
-                
-                <div class="card">
-                    <h3>📈 Results Visualization</h3>
-                    <p>The project generates several types of output:</p>
-                    <ul>
-                        <li><strong>JSON Data Files:</strong> Raw performance and memory data</li>
-                        <li><strong>Markdown Reports:</strong> Human-readable summaries and analysis</li>
-                        <li><strong>Interactive HTML Dashboard:</strong> This website with charts and visualizations</li>
-                        <li><strong>GitHub Pages Site:</strong> Automatically updated results at your GitHub Pages URL</li>
-                    </ul>
-                </div>
-            </section>
         </div>
     </main>
     
@@ -505,16 +438,7 @@ npm run generate-report # Generate reports
                     console.log('Summary markdown not available');
                 }
                 
-                // Load analysis content
-                try {
-                    const analysisResponse = await fetch('NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md');
-                    if (analysisResponse.ok) {
-                        const analysisContent = await analysisResponse.text();
-                        updateAnalysisContent(analysisContent);
-                    }
-                } catch (error) {
-                    console.log('Analysis content not available');
-                }
+
                 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -699,31 +623,7 @@ npm run generate-report # Generate reports
             }
         }
         
-        function updateAnalysisContent(analysisMarkdown) {
-            // Convert markdown to HTML (simplified)
-            let html = analysisMarkdown
-                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
-                .replace(/^- (.*$)/gim, '<li>$1</li>')
-                .replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>')
-                .replace(/`([^`]+)`/g, '<code>$1</code>')
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/^(.)/gm, '<p>$1')
-                .replace(/<\/p><p><h/g, '</p><h')
-                .replace(/<\/p><p><li>/g, '</p><ul><li>')
-                .replace(/<\/li><p>/g, '</li></ul><p>');
-            
-            // Clean up HTML
-            html = html.replace(/<p><\/p>/g, '');
-            html = html.replace(/<p>(<h[1-6]>)/g, '$1');
-            html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
-            
-            document.getElementById('analysis-content').innerHTML = html;
-        }
+
         
         function updateLastUpdated(timestamp) {
             document.getElementById('last-updated').textContent = new Date(timestamp).toLocaleString();

@@ -54,12 +54,16 @@
             background: var(--light-bg);
             padding: 1rem 0;
             border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         
         .nav-links {
             display: flex;
             gap: 2rem;
             list-style: none;
+            flex-wrap: wrap;
         }
         
         .nav-links a {
@@ -73,6 +77,11 @@
         
         .nav-links a:hover {
             background-color: rgba(0, 123, 255, 0.1);
+        }
+        
+        .nav-links a.active {
+            background-color: var(--primary-color);
+            color: white;
         }
         
         main {
@@ -204,7 +213,12 @@
     <nav>
         <div class="container">
             <ul class="nav-links">
-                <li><a href="index.html">← Back to Dashboard</a></li>
+                <li><a href="index.html">Performance Dashboard</a></li>
+                <li><a href="version-analysis.html">Version Analysis</a></li>
+                <li><a href="getting-started.html" class="active">Getting Started</a></li>
+                <li><a href="nested-als.html">Nested ALS Guide</a></li>
+                <li><a href="enterprise-dashboard.html">Enterprise Dashboard</a></li>
+                <li><a href="raw-data.html">Raw Data & Resources</a></li>
                 <li><a href="#installation">Installation</a></li>
                 <li><a href="#quick-start">Quick Start</a></li>
                 <li><a href="#features">Features</a></li>

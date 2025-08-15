@@ -56,10 +56,10 @@ jobs:
         # Create docs directory and copy existing site
         mkdir -p docs
         
-        # Copy the existing sophisticated site
+        # Backup existing site files
         cp docs/index.html docs/index.html.bak 2>/dev/null || true
-        cp docs/*.html docs/ 2>/dev/null || true
-        cp docs/*.md docs/ 2>/dev/null || true
+        
+        # Ensure all site files are preserved (HTML pages and markdown files are already in docs/)
         
         # Process downloaded artifacts
         if [ -d "./downloaded-artifacts" ]; then

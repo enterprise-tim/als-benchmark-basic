@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nested AsyncLocalStorage Guide - AsyncLocalStorage Performance Analysis</title>
+    
+    <!-- Prism.js CSS for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    
     <style>
         :root {
             --primary-color: #007bff;
@@ -54,12 +59,16 @@
             background: var(--light-bg);
             padding: 1rem 0;
             border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         
         .nav-links {
             display: flex;
             gap: 2rem;
             list-style: none;
+            flex-wrap: wrap;
         }
         
         .nav-links a {
@@ -73,6 +82,11 @@
         
         .nav-links a:hover {
             background-color: rgba(0, 123, 255, 0.1);
+        }
+        
+        .nav-links a.active {
+            background-color: var(--primary-color);
+            color: white;
         }
         
         main {
@@ -115,15 +129,40 @@
             background: #f1f3f4;
             border: 1px solid var(--border-color);
             border-radius: 4px;
-            padding: 1rem;
+            padding: 0;
             margin: 1rem 0;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             overflow-x: auto;
             font-size: 0.9rem;
         }
         
         .code-block.large {
             font-size: 0.85rem;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            padding: 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            overflow-x: auto;
+        }
+        
+        .code-block.large pre {
+            padding: 1.5rem;
+        }
+        
+        /* Override Prism.js styles to match our theme */
+        .code-block pre[class*="language-"] {
+            background: #2d3748;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+        
+        .code-block.large pre[class*="language-"] {
             padding: 1.5rem;
         }
         
@@ -135,7 +174,7 @@
         }
         
         .comparison-item {
-            padding: 1rem;
+            padding: 1.5rem;
             border-radius: 6px;
         }
         
@@ -208,7 +247,12 @@
     <nav>
         <div class="container">
             <ul class="nav-links">
-                <li><a href="index.html">← Back to Main Dashboard</a></li>
+                <li><a href="index.html">Performance Dashboard</a></li>
+                <li><a href="version-analysis.html">Version Analysis</a></li>
+                <li><a href="getting-started.html">Getting Started</a></li>
+                <li><a href="nested-als.html" class="active">Nested ALS Guide</a></li>
+                <li><a href="enterprise-dashboard.html">Enterprise Dashboard</a></li>
+                <li><a href="raw-data.html">Raw Data & Resources</a></li>
                 <li><a href="#what-is-nested">What is Nested ALS?</a></li>
                 <li><a href="#examples">Code Examples</a></li>
                 <li><a href="#performance">Performance Impact</a></li>
@@ -246,7 +290,7 @@
                 <div class="card">
                     <h3>Basic AsyncLocalStorage (Low Overhead)</h3>
                     <div class="code-block">
-const { AsyncLocalStorage } = require('async_hooks');
+                        <pre><code class="language-javascript">const { AsyncLocalStorage } = require('async_hooks');
 const requestContext = new AsyncLocalStorage();
 
 // Single context layer - minimal overhead
@@ -266,14 +310,15 @@ app.use((req, res, next) => {
 function someBusinessLogic() {
   const context = requestContext.getStore();
   console.log(`Processing request ${context.requestId} for user ${context.userId}`);
-}</div>
+}</code></pre>
+                    </div>
                     <span class="performance-indicator low">~0-5% overhead</span>
                 </div>
                 
                 <div class="card">
                     <h3>Nested AsyncLocalStorage (Higher Overhead)</h3>
                     <div class="code-block large">
-const { AsyncLocalStorage } = require('async_hooks');
+                        <pre><code class="language-javascript">const { AsyncLocalStorage } = require('async_hooks');
 const requestContext = new AsyncLocalStorage();
 const userContext = new AsyncLocalStorage();
 const featureContext = new AsyncLocalStorage();
@@ -317,14 +362,15 @@ function complexBusinessLogic() {
   const features = featureContext.getStore();
   
   console.log(`Request ${request.requestId} by user ${user.userId} with features:`, features.featureFlags);
-}</div>
+}</code></pre>
+                    </div>
                     <span class="performance-indicator high">~50-100%+ overhead</span>
                 </div>
                 
                 <div class="card">
                     <h3>Alternative: Single Context with Nested Data</h3>
                     <div class="code-block">
-const { AsyncLocalStorage } = require('async_hooks');
+                        <pre><code class="language-javascript">const { AsyncLocalStorage } = require('async_hooks');
 const appContext = new AsyncLocalStorage();
 
 // Single context with nested data structure - better performance
@@ -356,7 +402,8 @@ app.use((req, res, next) => {
 function optimizedBusinessLogic() {
   const context = appContext.getStore();
   console.log(`Request ${context.request.id} by user ${context.user.id} with features:`, context.features.featureFlags);
-}</div>
+}</code></pre>
+                    </div>
                     <span class="performance-indicator low">~0-5% overhead</span>
                 </div>
             </section>
@@ -445,7 +492,7 @@ function optimizedBusinessLogic() {
                 <div class="card">
                     <h3>Example: Context Merging Pattern</h3>
                     <div class="code-block">
-// Instead of nesting, merge contexts at boundaries
+                        <pre><code class="language-javascript">// Instead of nesting, merge contexts at boundaries
 function mergeContexts(parentContext, newContextData) {
   return {
     ...parentContext,
@@ -471,7 +518,8 @@ app.use((req, res, next) => {
     appContext.enterWith(mergedContext);
     next();
   });
-});</div>
+});</code></pre>
+                    </div>
                 </div>
             </section>
         </div>
@@ -483,5 +531,9 @@ app.use((req, res, next) => {
             <p><a href="index.html">← Back to Main Dashboard</a></p>
         </div>
     </footer>
+    
+    <!-- Prism.js JavaScript for syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </body>
 </html>

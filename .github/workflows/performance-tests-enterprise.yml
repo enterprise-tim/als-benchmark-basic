@@ -428,8 +428,7 @@ jobs:
           enterprise-dashboard/
         retention-days: 180  # Keep enterprise aggregated results for 6 months
     
-    - name: Deploy Dashboard to GitHub Pages (if main branch)
-      if: github.ref == 'refs/heads/main'
+    - name: Deploy Dashboard
       run: |
         # Create dashboard deployment directory
         mkdir -p dashboard-deploy

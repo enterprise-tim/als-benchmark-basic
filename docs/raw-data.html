@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raw Data & Resources - AsyncLocalStorage Performance Analysis</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-bg: #f8f9fa;
+            --border-color: #e9ecef;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        nav {
+            background: var(--light-bg);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-links a:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        
+        .nav-links a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        main {
+            padding: 2rem 0;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+        }
+        
+        .section h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .code-block {
+            background: #f1f3f4;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            overflow-x: auto;
+        }
+        
+        footer {
+            background: var(--light-bg);
+            padding: 2rem 0;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Raw Data & Resources</h1>
+            <p class="subtitle">Access raw benchmark data, project structure, and testing resources</p>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="index.html">Performance Dashboard</a></li>
+                <li><a href="version-analysis.html">Version Analysis</a></li>
+                <li><a href="getting-started.html">Getting Started</a></li>
+                <li><a href="nested-als.html">Nested ALS Guide</a></li>
+                <li><a href="enterprise-dashboard.html">Enterprise Dashboard</a></li>
+                <li><a href="raw-data.html" class="active">Raw Data & Resources</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <main>
+        <div class="container">
+            <section class="section">
+                <h2>Raw Data & Resources</h2>
+                
+                <div class="card">
+                    <h3>📁 Project Structure</h3>
+                    <div class="code-block">async-node-stats/
+├── src/
+│   ├── benchmark.js       # Core performance benchmarks
+│   ├── memory-test.js     # Memory profiling tests
+│   ├── report-generator.js # Report generation
+│   ├── generate-docs.js   # Documentation site generator
+│   └── index.js          # Main CLI interface
+├── .github/workflows/
+│   ├── benchmark.yml     # Automated testing
+│   └── pages.yml         # GitHub Pages deployment
+├── results/              # Test results (JSON)
+├── docs/                # Generated documentation
+├── test-versions.sh     # Multi-version testing script
+└── README.md</div>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 Available Data Files</h3>
+                    <ul id="data-files">
+                        <li><a href="detailed-results.json">Detailed Results (JSON)</a> - Complete benchmark and memory test results</li>
+                        <li><a href="version-comparison.json">Version Comparison (JSON)</a> - Cross-version performance analysis</li>
+                        <li><a href="chart-data.json">Chart Data (JSON)</a> - Processed data for visualizations</li>
+                        <li><a href="SUMMARY.md">Summary Report (Markdown)</a> - Human-readable analysis summary</li>
+                        <li><a href="NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md">Node.js Version Analysis (Markdown)</a> - Detailed version-by-version changes</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>🤖 GitHub Actions Integration</h3>
+                    <p>This project includes automated testing workflows:</p>
+                    <ul>
+                        <li><strong>Benchmark Workflow:</strong> Triggers on push, PR, and weekly schedule</li>
+                        <li><strong>Multi-Version Testing:</strong> Tests across Node.js 16.x, 18.x, 20.x, 22.x, 24.x</li>
+                        <li><strong>Performance Regression Detection:</strong> Detects performance regressions in PRs</li>
+                        <li><strong>GitHub Pages Deployment:</strong> Automatically deploys results to GitHub Pages</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>🔧 Run Your Own Tests</h3>
+                    <p>To run these benchmarks yourself:</p>
+                    <div class="code-block"># Clone and setup
+git clone https://github.com/tobrien/async-node-stats.git
+cd async-node-stats
+npm install
+
+# Run all tests
+npm start all
+
+# Or run individual tests
+npm run benchmark      # Performance only
+npm run memory-test    # Memory analysis only
+npm run generate-report # Generate reports
+
+# Multi-version testing (requires NVM)
+./test-versions.sh</div>
+                </div>
+                
+                <div class="card">
+                    <h3>📈 Results Visualization</h3>
+                    <p>The project generates several types of output:</p>
+                    <ul>
+                        <li><strong>JSON Data Files:</strong> Raw performance and memory data</li>
+                        <li><strong>Markdown Reports:</strong> Human-readable summaries and analysis</li>
+                        <li><strong>Interactive HTML Dashboard:</strong> This website with charts and visualizations</li>
+                        <li><strong>GitHub Pages Site:</strong> Automatically updated results at your GitHub Pages URL</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>🔍 Data Format Details</h3>
+                    <h4>Detailed Results JSON Structure</h4>
+                    <div class="code-block">{
+  "benchmarkResults": [
+    {
+      "nodeVersion": "v22.0.0",
+      "timestamp": "2024-01-15T10:30:00.000Z",
+      "benchmarks": [
+        {
+          "name": "Small Object (1KB)",
+          "overhead": {
+            "timePercent": 5.2,
+            "nestedTimePercent": 12.8,
+            "memoryRSSBytes": 1048576
+          }
+        }
+      ]
+    }
+  ],
+  "memoryResults": [
+    {
+      "nodeVersion": "v22.0.0",
+      "memoryLeakTest": {
+        "analysis": {
+          "potentialLeak": false,
+          "avgGrowthPerIterationBytes": 1024
+        }
+      }
+    }
+  ]
+}</div>
+                    
+                    <h4>Chart Data JSON Structure</h4>
+                    <div class="code-block">{
+  "performanceChart": {
+    "labels": ["v16.20.2", "v18.19.1", "v20.11.0"],
+    "datasets": [
+      {
+        "label": "Basic ALS Overhead",
+        "data": [8.5, 6.2, 4.1]
+      },
+      {
+        "label": "Nested ALS Overhead", 
+        "data": [25.3, 18.7, 12.4]
+      }
+    ]
+  },
+  "memoryChart": {
+    "labels": ["v16.20.2", "v18.19.1", "v20.11.0"],
+    "datasets": [
+      {
+        "label": "Memory Overhead (MB)",
+        "data": [2.1, 1.8, 1.5]
+      }
+    ]
+  }
+}</div>
+                </div>
+                
+                <div class="card">
+                    <h3>🧪 Test Scenarios</h3>
+                    <p>The benchmark suite includes these test scenarios:</p>
+                    <ul>
+                        <li><strong>Small Object (1KB):</strong> Basic AsyncLocalStorage usage with minimal data</li>
+                        <li><strong>Medium Object (10KB):</strong> Moderate data size to test scaling</li>
+                        <li><strong>Large Object (100KB):</strong> Large data objects to test memory impact</li>
+                        <li><strong>Nested Contexts:</strong> AsyncLocalStorage.run() calls within other ALS contexts</li>
+                        <li><strong>Concurrent Operations:</strong> Multiple simultaneous ALS operations</li>
+                        <li><strong>Memory Leak Detection:</strong> Long-running tests to detect memory growth</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 API Reference</h3>
+                    <h4>Command Line Interface</h4>
+                    <div class="code-block"># Available commands
+npm start all           # Run all tests and generate reports
+npm start benchmark     # Run performance benchmarks only
+npm start memory        # Run memory tests only
+npm start report        # Generate reports from existing data
+npm start docs          # Generate documentation site
+
+# Environment variables
+NODE_ENV=production     # Use production settings
+ITERATIONS=10000        # Number of test iterations
+CONCURRENT_TESTS=100    # Number of concurrent operations</div>
+                    
+                    <h4>Programmatic API</h4>
+                    <div class="code-block">const { runBenchmark, runMemoryTest } = require('./src');
+
+// Run performance benchmark
+const results = await runBenchmark({
+  iterations: 10000,
+  objectSize: 'medium',
+  concurrent: true
+});
+
+// Run memory analysis
+const memoryResults = await runMemoryTest({
+  duration: 60000, // 1 minute
+  checkInterval: 1000 // Check every second
+});</div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 AsyncLocalStorage Performance Analysis. Generated automatically from benchmark results.</p>
+            <p>Last updated: <span id="last-updated">--</span></p>
+        </div>
+    </footer>
+    
+    <script>
+        // Update last updated timestamp
+        async function updateLastUpdated() {
+            try {
+                const response = await fetch('chart-data.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.generatedAt) {
+                        document.getElementById('last-updated').textContent = new Date(data.generatedAt).toLocaleString();
+                    }
+                }
+            } catch (error) {
+                console.log('Could not load timestamp');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', updateLastUpdated);
+    </script>
+</body>
+</html>
