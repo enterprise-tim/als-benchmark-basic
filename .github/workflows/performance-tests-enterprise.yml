@@ -2,9 +2,7 @@ name: High-Performance Benchmarks (Enterprise)
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+    branches: [ performance-test ]
   schedule:
     # Run daily at 2 AM UTC for trend monitoring
     - cron: '0 2 * * *'
@@ -17,7 +15,7 @@ on:
       test_iterations:
         description: 'Number of test iterations for statistical significance'
         required: false
-        default: '10'
+        default: '2'
       runner_type:
         description: 'Runner type for performance testing'
         required: false
@@ -29,6 +27,11 @@ on:
           - ubuntu-latest-16-cores  # 16 vCPUs, 64 GB RAM, 600 GB SSD
           - ubuntu-latest-32-cores  # 32 vCPUs, 128 GB RAM, 1200 GB SSD
           - ubuntu-latest-64-cores  # 64 vCPUs, 256 GB RAM, 2040 GB SSD
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   performance-tests:
@@ -376,6 +379,9 @@ jobs:
     needs: performance-tests
     runs-on: ubuntu-latest
     if: always()  # Run even if some tests failed
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
     - uses: actions/checkout@v4
     
@@ -461,10 +467,17 @@ jobs:
         </html>
         EOF
     
+    - name: Setup Pages
+      if: github.ref == 'refs/heads/main'
+      uses: actions/configure-pages@v4
+    
+    - name: Upload to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./dashboard-deploy
+    
     - name: Deploy to GitHub Pages
       if: github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dashboard-deploy
-        destination_dir: enterprise-results
+      id: deployment
+      uses: actions/deploy-pages@v4

@@ -7,6 +7,15 @@ async function generateDocumentationSite() {
   // Ensure docs directory exists
   await fs.mkdir(docsDir, { recursive: true });
   
+  // Copy analysis markdown file if it doesn't exist
+  const analysisSource = path.join(process.cwd(), 'docs', 'NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md');
+  try {
+    await fs.access(analysisSource);
+    console.log('Analysis file already exists in docs directory');
+  } catch (error) {
+    console.log('Analysis file not found in docs, this is expected for new setups');
+  }
+  
   // Generate main index.html
   const indexHtml = `<!DOCTYPE html>
 <html lang="en">
@@ -509,6 +518,8 @@ npm run memory-test</div>
 
   await fs.writeFile(path.join(docsDir, 'index.html'), indexHtml);
   console.log('Documentation site generated: docs/index.html');
+  console.log('Note: Additional pages (nested-als.html, getting-started.html) should be manually created or copied to docs/ directory');
+  console.log('The site expects NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md to be present in docs/ directory');
 }
 
 // Run documentation generation if this file is executed directly

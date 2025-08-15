@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nested AsyncLocalStorage Guide - AsyncLocalStorage Performance Analysis</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-bg: #f8f9fa;
+            --border-color: #e9ecef;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        nav {
+            background: var(--light-bg);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-links a:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        
+        main {
+            padding: 2rem 0;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+        }
+        
+        .section h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .card.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .card.success {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .card.danger {
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .code-block {
+            background: #f1f3f4;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+        
+        .code-block.large {
+            font-size: 0.85rem;
+            padding: 1.5rem;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .comparison-item {
+            padding: 1rem;
+            border-radius: 6px;
+        }
+        
+        .comparison-item.good {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+        
+        .comparison-item.bad {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+        
+        .performance-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        
+        .performance-indicator.low {
+            background: rgba(40, 167, 69, 0.2);
+            color: #155724;
+        }
+        
+        .performance-indicator.medium {
+            background: rgba(255, 193, 7, 0.2);
+            color: #856404;
+        }
+        
+        .performance-indicator.high {
+            background: rgba(220, 53, 69, 0.2);
+            color: #721c24;
+        }
+        
+        footer {
+            background: var(--light-bg);
+            padding: 2rem 0;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Nested AsyncLocalStorage Guide</h1>
+            <p class="subtitle">Understanding nested contexts and their performance implications</p>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="index.html">← Back to Main Dashboard</a></li>
+                <li><a href="#what-is-nested">What is Nested ALS?</a></li>
+                <li><a href="#examples">Code Examples</a></li>
+                <li><a href="#performance">Performance Impact</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <main>
+        <div class="container">
+            <section id="what-is-nested" class="section">
+                <h2>What is Nested AsyncLocalStorage?</h2>
+                
+                <div class="card">
+                    <p><strong>Nested AsyncLocalStorage</strong> occurs when you have one <code>AsyncLocalStorage.run()</code> call inside another, creating multiple layers of context. This is common in complex applications where different parts of the system need their own context isolation.</p>
+                    
+                    <h3>Common Scenarios</h3>
+                    <ul>
+                        <li><strong>Request + User Context:</strong> HTTP request context containing user-specific context</li>
+                        <li><strong>Tracing + Feature Flags:</strong> Distributed tracing context with feature flag context</li>
+                        <li><strong>Multi-tenant Applications:</strong> Tenant context with user/session context</li>
+                        <li><strong>Microservice Boundaries:</strong> Service context with operation-specific context</li>
+                    </ul>
+                </div>
+                
+                <div class="card warning">
+                    <h3>⚠️ Performance Impact</h3>
+                    <p>Nested AsyncLocalStorage contexts can have <strong>significantly higher overhead</strong> than basic usage. Our benchmarks show nested contexts can add 50-100%+ overhead compared to 0-5% for basic usage.</p>
+                </div>
+            </section>
+            
+            <section id="examples" class="section">
+                <h2>Code Examples</h2>
+                
+                <div class="card">
+                    <h3>Basic AsyncLocalStorage (Low Overhead)</h3>
+                    <div class="code-block">
+const { AsyncLocalStorage } = require('async_hooks');
+const requestContext = new AsyncLocalStorage();
+
+// Single context layer - minimal overhead
+app.use((req, res, next) => {
+  const context = {
+    requestId: req.headers['x-request-id'],
+    userId: req.user?.id,
+    timestamp: Date.now()
+  };
+  
+  requestContext.run(context, () => {
+    next(); // All downstream code has access to context
+  });
+});
+
+// Accessing context anywhere in the request
+function someBusinessLogic() {
+  const context = requestContext.getStore();
+  console.log(`Processing request ${context.requestId} for user ${context.userId}`);
+}</div>
+                    <span class="performance-indicator low">~0-5% overhead</span>
+                </div>
+                
+                <div class="card">
+                    <h3>Nested AsyncLocalStorage (Higher Overhead)</h3>
+                    <div class="code-block large">
+const { AsyncLocalStorage } = require('async_hooks');
+const requestContext = new AsyncLocalStorage();
+const userContext = new AsyncLocalStorage();
+const featureContext = new AsyncLocalStorage();
+
+// Multiple nested context layers - higher overhead
+app.use((req, res, next) => {
+  const reqData = {
+    requestId: req.headers['x-request-id'],
+    timestamp: Date.now(),
+    path: req.path
+  };
+  
+  // First context layer
+  requestContext.run(reqData, () => {
+    const userData = {
+      userId: req.user?.id,
+      roles: req.user?.roles,
+      permissions: req.user?.permissions
+    };
+    
+    // Second context layer (nested)
+    userContext.run(userData, () => {
+      const featureData = {
+        experimentId: req.headers['x-experiment'],
+        featureFlags: getFeatureFlags(req.user?.id),
+        abTestGroup: getABTestGroup(req.user?.id)
+      };
+      
+      // Third context layer (deeply nested)
+      featureContext.run(featureData, () => {
+        next(); // All contexts are now active
+      });
+    });
+  });
+});
+
+// Accessing multiple contexts
+function complexBusinessLogic() {
+  const request = requestContext.getStore();
+  const user = userContext.getStore();
+  const features = featureContext.getStore();
+  
+  console.log(`Request ${request.requestId} by user ${user.userId} with features:`, features.featureFlags);
+}</div>
+                    <span class="performance-indicator high">~50-100%+ overhead</span>
+                </div>
+                
+                <div class="card">
+                    <h3>Alternative: Single Context with Nested Data</h3>
+                    <div class="code-block">
+const { AsyncLocalStorage } = require('async_hooks');
+const appContext = new AsyncLocalStorage();
+
+// Single context with nested data structure - better performance
+app.use((req, res, next) => {
+  const context = {
+    request: {
+      id: req.headers['x-request-id'],
+      timestamp: Date.now(),
+      path: req.path
+    },
+    user: {
+      id: req.user?.id,
+      roles: req.user?.roles,
+      permissions: req.user?.permissions
+    },
+    features: {
+      experimentId: req.headers['x-experiment'],
+      featureFlags: getFeatureFlags(req.user?.id),
+      abTestGroup: getABTestGroup(req.user?.id)
+    }
+  };
+  
+  appContext.run(context, () => {
+    next(); // Single context with all data
+  });
+});
+
+// Accessing nested data from single context
+function optimizedBusinessLogic() {
+  const context = appContext.getStore();
+  console.log(`Request ${context.request.id} by user ${context.user.id} with features:`, context.features.featureFlags);
+}</div>
+                    <span class="performance-indicator low">~0-5% overhead</span>
+                </div>
+            </section>
+            
+            <section id="performance" class="section">
+                <h2>Performance Impact Analysis</h2>
+                
+                <div class="comparison-grid">
+                    <div class="comparison-item good">
+                        <h3>✅ Single Context</h3>
+                        <ul>
+                            <li>0-5% performance overhead</li>
+                            <li>Simple context management</li>
+                            <li>Easy to debug and trace</li>
+                            <li>Minimal memory footprint</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="comparison-item bad">
+                        <h3>❌ Nested Contexts</h3>
+                        <ul>
+                            <li>50-100%+ performance overhead</li>
+                            <li>Complex context chain management</li>
+                            <li>Harder to debug context issues</li>
+                            <li>Higher memory usage</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>Why Nested Contexts Are Slower</h3>
+                    <ol>
+                        <li><strong>Context Chain Traversal:</strong> Each nested level requires traversing the async context chain</li>
+                        <li><strong>Multiple Hook Activations:</strong> Each AsyncLocalStorage instance triggers its own async hooks</li>
+                        <li><strong>Memory Overhead:</strong> Multiple context objects are maintained simultaneously</li>
+                        <li><strong>Garbage Collection Pressure:</strong> More objects to track and clean up</li>
+                    </ol>
+                </div>
+                
+                <div class="card">
+                    <h3>Node.js Version Differences</h3>
+                    <p>The performance impact of nested contexts varies significantly across Node.js versions:</p>
+                    <ul>
+                        <li><strong>Node.js 16-22:</strong> Nested contexts can cause 70-100%+ overhead</li>
+                        <li><strong>Node.js 24+:</strong> AsyncContextFrame reduces overhead but nested contexts still expensive (55-105%+)</li>
+                        <li><strong>Future versions:</strong> Continued optimization expected but nested contexts will likely remain costly</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="best-practices" class="section">
+                <h2>Best Practices</h2>
+                
+                <div class="card success">
+                    <h3>✅ Recommended Approaches</h3>
+                    <ul>
+                        <li><strong>Use Single Context:</strong> Combine all context data into one AsyncLocalStorage instance</li>
+                        <li><strong>Namespace Your Data:</strong> Use object properties to organize different types of context</li>
+                        <li><strong>Lazy Loading:</strong> Only add context data when needed</li>
+                        <li><strong>Context Merging:</strong> Merge contexts at boundaries rather than nesting</li>
+                    </ul>
+                </div>
+                
+                <div class="card warning">
+                    <h3>⚠️ When Nested Contexts Might Be Necessary</h3>
+                    <ul>
+                        <li><strong>Library Boundaries:</strong> When different libraries need isolated contexts</li>
+                        <li><strong>Security Isolation:</strong> When contexts need strict separation for security</li>
+                        <li><strong>Legacy Integration:</strong> When integrating with existing nested context systems</li>
+                        <li><strong>Complex Middleware:</strong> When middleware layers require independent contexts</li>
+                    </ul>
+                    <p><strong>In these cases:</strong> Accept the performance cost but monitor and optimize where possible.</p>
+                </div>
+                
+                <div class="card">
+                    <h3>Optimization Strategies</h3>
+                    <ol>
+                        <li><strong>Context Pooling:</strong> Reuse context objects to reduce GC pressure</li>
+                        <li><strong>Selective Nesting:</strong> Only nest contexts when absolutely necessary</li>
+                        <li><strong>Performance Monitoring:</strong> Track context overhead in production</li>
+                        <li><strong>Gradual Migration:</strong> Move from nested to single contexts over time</li>
+                        <li><strong>Caching:</strong> Cache context lookups when accessed frequently</li>
+                    </ol>
+                </div>
+                
+                <div class="card">
+                    <h3>Example: Context Merging Pattern</h3>
+                    <div class="code-block">
+// Instead of nesting, merge contexts at boundaries
+function mergeContexts(parentContext, newContextData) {
+  return {
+    ...parentContext,
+    ...newContextData,
+    // Preserve parent context in case of conflicts
+    parent: parentContext
+  };
+}
+
+// Usage
+app.use((req, res, next) => {
+  const baseContext = { requestId: req.id, timestamp: Date.now() };
+  
+  appContext.run(baseContext, () => {
+    // Later, when you need to add user context
+    const currentContext = appContext.getStore();
+    const mergedContext = mergeContexts(currentContext, {
+      userId: req.user.id,
+      roles: req.user.roles
+    });
+    
+    // Update the same context instead of nesting
+    appContext.enterWith(mergedContext);
+    next();
+  });
+});</div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 AsyncLocalStorage Performance Analysis. Part of the comprehensive performance testing suite.</p>
+            <p><a href="index.html">← Back to Main Dashboard</a></p>
+        </div>
+    </footer>
+</body>
+</html>

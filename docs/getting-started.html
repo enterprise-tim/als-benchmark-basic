@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - AsyncLocalStorage Performance Analysis</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-bg: #f8f9fa;
+            --border-color: #e9ecef;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        nav {
+            background: var(--light-bg);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-links a:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        
+        main {
+            padding: 2rem 0;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+        }
+        
+        .section h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .card.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .card.success {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .card.danger {
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .code-block {
+            background: #f1f3f4;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+        
+        .step-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .step-card {
+            background: var(--light-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .step-number {
+            background: var(--primary-color);
+            color: white;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .feature-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        footer {
+            background: var(--light-bg);
+            padding: 2rem 0;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .step-grid, .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Getting Started</h1>
+            <p class="subtitle">Set up and run AsyncLocalStorage performance tests</p>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="index.html">← Back to Dashboard</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#quick-start">Quick Start</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#configuration">Configuration</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <main>
+        <div class="container">
+            <section id="purpose" class="section">
+                <h2>🎯 Purpose</h2>
+                <div class="card">
+                    <p>This project helps answer the critical question: <strong>"What is the overhead of using AsyncLocalStorage, and is there anything I should be worried about?"</strong></p>
+                    
+                    <p>AsyncLocalStorage is a powerful Node.js feature that enables context propagation across asynchronous operations, but it comes with performance implications that vary significantly across Node.js versions and usage patterns.</p>
+                </div>
+            </section>
+            
+            <section id="installation" class="section">
+                <h2>🛠 Installation</h2>
+                
+                <div class="step-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h3>Clone Repository</h3>
+                        <div class="code-block">git clone https://github.com/tobrien/async-node-stats.git
+cd async-node-stats</div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h3>Install Dependencies</h3>
+                        <div class="code-block">npm install</div>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h3>Run Tests</h3>
+                        <div class="code-block">npm start all</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>Requirements</h3>
+                    <ul>
+                        <li><strong>Node.js:</strong> 16.0.0 or higher</li>
+                        <li><strong>NVM:</strong> For multi-version testing (optional)</li>
+                        <li><strong>Git:</strong> For version control and workflows</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="quick-start" class="section">
+                <h2>🏃‍♂️ Quick Start</h2>
+                
+                <div class="card">
+                    <h3>Run All Tests</h3>
+                    <div class="code-block">npm start all</div>
+                    <p>This will run both performance benchmarks and memory tests, then generate a comprehensive report.</p>
+                </div>
+                
+                <div class="card">
+                    <h3>Individual Test Categories</h3>
+                    <div class="code-block"># Performance benchmarks only
+npm run benchmark
+
+# Memory profiling only
+npm run memory-test
+
+# Generate reports from existing results
+npm run generate-report</div>
+                </div>
+                
+                <div class="card">
+                    <h3>Multi-Version Testing</h3>
+                    <p>Test across multiple Node.js versions using NVM:</p>
+                    <div class="code-block">./test-versions.sh</div>
+                    <p>This will automatically:</p>
+                    <ol>
+                        <li>Install and test Node.js versions 16.20.2, 18.19.1, 20.11.0, 21.7.3, 22.0.0, and 24.6.0</li>
+                        <li>Run benchmarks and memory tests for each version</li>
+                        <li>Generate a comprehensive comparison report</li>
+                    </ol>
+                </div>
+            </section>
+            
+            <section id="features" class="section">
+                <h2>🚀 Features</h2>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3>Performance Benchmarks</h3>
+                        <p>Compare execution time with and without AsyncLocalStorage</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🧠</div>
+                        <h3>Memory Profiling</h3>
+                        <p>Analyze memory usage and detect potential leaks</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>Multi-Version Testing</h3>
+                        <p>Test across different Node.js versions using NVM</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Concurrent Testing</h3>
+                        <p>Evaluate performance under concurrent load</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">📈</div>
+                        <h3>Automated Reporting</h3>
+                        <p>Generate comprehensive reports and visualizations</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🤖</div>
+                        <h3>CI/CD Ready</h3>
+                        <p>GitHub Actions workflows for continuous testing</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="what-gets-tested" class="section">
+                <h2>📊 What Gets Tested</h2>
+                
+                <div class="card">
+                    <h3>Performance Benchmarks</h3>
+                    <ul>
+                        <li>Small, medium, and large data objects</li>
+                        <li>Synchronous and asynchronous operations</li>
+                        <li>Nested AsyncLocalStorage contexts</li>
+                        <li>Varying iteration counts to measure scalability</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>Memory Analysis</h3>
+                    <ul>
+                        <li>Memory usage by object size</li>
+                        <li>Memory leak detection over time</li>
+                        <li>Concurrent operation memory impact</li>
+                        <li>Garbage collection effectiveness</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>Cross-Version Analysis</h3>
+                    <ul>
+                        <li>Node.js 16.x through 24.x</li>
+                        <li>Performance evolution over versions</li>
+                        <li>Regression detection</li>
+                        <li>Optimization improvements</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="understanding-results" class="section">
+                <h2>📈 Understanding the Results</h2>
+                
+                <div class="card">
+                    <h3>Performance Metrics</h3>
+                    <ul>
+                        <li><strong>Overhead Percentage:</strong> How much slower operations are with AsyncLocalStorage</li>
+                        <li><strong>Memory Impact:</strong> Additional memory usage in MB</li>
+                        <li><strong>Nested Overhead:</strong> Performance impact of nested AsyncLocalStorage contexts</li>
+                    </ul>
+                </div>
+                
+                <div class="card success">
+                    <h3>✅ Interpretation Guidelines</h3>
+                    <ul>
+                        <li><strong>&lt; 5% overhead:</strong> Minimal impact, safe for most use cases</li>
+                        <li><strong>5-15% overhead:</strong> Moderate impact, consider for high-throughput applications</li>
+                        <li><strong>&gt; 15% overhead:</strong> Significant impact, use with caution</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>Sample Results</h3>
+                    <div class="code-block">=== Performance Summary ===
+Node.js Version: v20.11.0
+Average AsyncLocalStorage Overhead: 3.2%
+Average Nested ALS Overhead: 8.7%
+Total Memory Overhead: 2.4MB
+
+Recommendations:
+✅ AsyncLocalStorage is suitable for your use case</div>
+                </div>
+            </section>
+            
+            <section id="configuration" class="section">
+                <h2>🔧 Configuration</h2>
+                
+                <div class="card">
+                    <h3>Custom Test Parameters</h3>
+                    <p>Edit the test configurations in <code>src/benchmark.js</code>:</p>
+                    <div class="code-block">const testConfigs = [
+  { name: 'Small Data', iterations: 10000, dataSize: 5, asyncOps: false },
+  { name: 'Custom Test', iterations: 5000, dataSize: 100, asyncOps: true },
+  // Add your own configurations
+];</div>
+                </div>
+                
+                <div class="card">
+                    <h3>Node.js Versions</h3>
+                    <p>Modify the versions tested in <code>test-versions.sh</code>:</p>
+                    <div class="code-block">VERSIONS=(
+    "16.20.2"
+    "18.19.1" 
+    "20.11.0"
+    "22.0.0"
+    "24.6.0"
+    # Add more versions
+)</div>
+                </div>
+            </section>
+            
+            <section id="use-cases" class="section">
+                <h2>🧪 Use Cases</h2>
+                
+                <div class="step-grid">
+                    <div class="step-card">
+                        <h3>Development Teams</h3>
+                        <ul>
+                            <li>Evaluate AsyncLocalStorage adoption impact</li>
+                            <li>Set performance budgets and alerts</li>
+                            <li>Track performance over time</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="step-card">
+                        <h3>Library Authors</h3>
+                        <ul>
+                            <li>Measure overhead of AsyncLocalStorage-based features</li>
+                            <li>Document performance characteristics</li>
+                            <li>Validate optimizations</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="step-card">
+                        <h3>DevOps Teams</h3>
+                        <ul>
+                            <li>Monitor performance in CI/CD pipelines</li>
+                            <li>Detect performance regressions</li>
+                            <li>Validate Node.js upgrade impact</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 AsyncLocalStorage Performance Analysis. Made with ❤️ for the Node.js community.</p>
+            <p><a href="index.html">← Back to Dashboard</a></p>
+        </div>
+    </footer>
+</body>
+</html>

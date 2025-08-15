@@ -173,6 +173,21 @@
             font-weight: 600;
         }
         
+        td.success {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #155724;
+        }
+        
+        td.warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #856404;
+        }
+        
+        td.danger {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #721c24;
+        }
+        
         .loading {
             text-align: center;
             color: #666;
@@ -225,6 +240,9 @@
                 <li><a href="#overview">Overview</a></li>
                 <li><a href="#performance">Performance</a></li>
                 <li><a href="#memory">Memory</a></li>
+                <li><a href="#analysis">Analysis</a></li>
+                <li><a href="getting-started.html">Getting Started</a></li>
+                <li><a href="nested-als.html">Nested ALS Guide</a></li>
                 <li><a href="#recommendations">Recommendations</a></li>
                 <li><a href="#raw-data">Raw Data</a></li>
             </ul>
@@ -236,15 +254,65 @@
             <section id="overview" class="section">
                 <h2>Overview</h2>
                 <div class="card">
-                    <p>This analysis provides comprehensive performance benchmarks for Node.js AsyncLocalStorage, comparing overhead across different versions and usage patterns.</p>
+                    <p>This analysis provides comprehensive performance benchmarks for Node.js AsyncLocalStorage, helping answer the critical question: <strong>"What is the overhead of using AsyncLocalStorage, and is there anything I should be worried about?"</strong></p>
                     
-                    <h3>Test Categories</h3>
+                    <p>AsyncLocalStorage enables powerful patterns like request tracing, user context propagation, distributed tracing, and logging context preservation, but it comes with performance implications that vary significantly across Node.js versions.</p>
+                </div>
+                
+                <div class="card">
+                    <h3>🚀 Key Features</h3>
                     <ul>
-                        <li><strong>Performance Benchmarks:</strong> Time overhead comparison with and without AsyncLocalStorage</li>
-                        <li><strong>Memory Profiling:</strong> Memory usage analysis and leak detection</li>
-                        <li><strong>Concurrent Testing:</strong> Performance under concurrent load</li>
-                        <li><strong>Version Comparison:</strong> Cross-version analysis of improvements</li>
+                        <li><strong>Performance Benchmarks:</strong> Compare execution time with and without AsyncLocalStorage</li>
+                        <li><strong>Memory Profiling:</strong> Analyze memory usage and detect potential leaks</li>
+                        <li><strong>Multi-Version Testing:</strong> Test across different Node.js versions using NVM</li>
+                        <li><strong>Concurrent Testing:</strong> Evaluate performance under concurrent load</li>
+                        <li><strong>Automated Reporting:</strong> Generate comprehensive reports and visualizations</li>
+                        <li><strong>GitHub Integration:</strong> Automated testing and GitHub Pages deployment</li>
+                        <li><strong>CI/CD Ready:</strong> GitHub Actions workflows for continuous testing</li>
                     </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 What Gets Tested</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                        <div>
+                            <h4>Performance Benchmarks</h4>
+                            <ul>
+                                <li>Small, medium, and large data objects</li>
+                                <li>Synchronous and asynchronous operations</li>
+                                <li>Nested AsyncLocalStorage contexts</li>
+                                <li>Varying iteration counts to measure scalability</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4>Memory Analysis</h4>
+                            <ul>
+                                <li>Memory usage by object size</li>
+                                <li>Memory leak detection over time</li>
+                                <li>Concurrent operation memory impact</li>
+                                <li>Garbage collection effectiveness</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4>Cross-Version Analysis</h4>
+                            <ul>
+                                <li>Node.js 16.x through 24.x</li>
+                                <li>Performance evolution over versions</li>
+                                <li>Regression detection</li>
+                                <li>Optimization improvements</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🏃‍♂️ Quick Start</h3>
+                    <p>Get started with performance testing:</p>
+                    <div class="code-block">git clone https://github.com/tobrien/async-node-stats.git
+cd async-node-stats
+npm install
+npm start all</div>
+                    <p><a href="getting-started.html">→ Full Getting Started Guide</a></p>
                 </div>
                 
                 <div id="summary-metrics" class="metrics-grid">
@@ -269,8 +337,24 @@
             
             <section id="performance" class="section">
                 <h2>Performance Analysis</h2>
+                
+                <div class="card">
+                    <h3>AsyncLocalStorage Basic Overhead</h3>
+                    <p>This chart shows the basic overhead of using AsyncLocalStorage compared to not using it. Values represent the percentage increase in execution time.</p>
+                </div>
+                
                 <div class="chart-container">
-                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                    <canvas id="basicOverheadChart" width="400" height="200"></canvas>
+                </div>
+                
+                <div class="card">
+                    <h3>Nested AsyncLocalStorage Overhead</h3>
+                    <p>This chart shows the overhead when using nested AsyncLocalStorage contexts (one ALS context inside another). This represents more complex scenarios where multiple layers of context are needed.</p>
+                    <p><strong>What is "Nested ALS"?</strong> When you have one AsyncLocalStorage.run() call inside another, creating multiple layers of context. <a href="nested-als.html">See detailed explanation with code examples →</a></p>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="nestedOverheadChart" width="400" height="200"></canvas>
                 </div>
                 
                 <div id="performance-summary" class="card">
@@ -289,6 +373,13 @@
                 </div>
             </section>
             
+            <section id="analysis" class="section">
+                <h2>Node.js Version Analysis</h2>
+                <div id="analysis-content" class="card">
+                    <div class="loading">Loading analysis...</div>
+                </div>
+            </section>
+            
             <section id="recommendations" class="section">
                 <h2>Recommendations</h2>
                 <div id="recommendations-content" class="card">
@@ -297,22 +388,76 @@
             </section>
             
             <section id="raw-data" class="section">
-                <h2>Raw Data</h2>
+                <h2>Raw Data & Resources</h2>
+                
                 <div class="card">
-                    <h3>Quick Start</h3>
+                    <h3>📁 Project Structure</h3>
+                    <div class="code-block">async-node-stats/
+├── src/
+│   ├── benchmark.js       # Core performance benchmarks
+│   ├── memory-test.js     # Memory profiling tests
+│   ├── report-generator.js # Report generation
+│   ├── generate-docs.js   # Documentation site generator
+│   └── index.js          # Main CLI interface
+├── .github/workflows/
+│   ├── benchmark.yml     # Automated testing
+│   └── pages.yml         # GitHub Pages deployment
+├── results/              # Test results (JSON)
+├── docs/                # Generated documentation
+├── test-versions.sh     # Multi-version testing script
+└── README.md</div>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 Available Data Files</h3>
+                    <ul id="data-files">
+                        <li><a href="detailed-results.json">Detailed Results (JSON)</a> - Complete benchmark and memory test results</li>
+                        <li><a href="version-comparison.json">Version Comparison (JSON)</a> - Cross-version performance analysis</li>
+                        <li><a href="chart-data.json">Chart Data (JSON)</a> - Processed data for visualizations</li>
+                        <li><a href="SUMMARY.md">Summary Report (Markdown)</a> - Human-readable analysis summary</li>
+                        <li><a href="NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md">Node.js Version Analysis (Markdown)</a> - Detailed version-by-version changes</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>🤖 GitHub Actions Integration</h3>
+                    <p>This project includes automated testing workflows:</p>
+                    <ul>
+                        <li><strong>Benchmark Workflow:</strong> Triggers on push, PR, and weekly schedule</li>
+                        <li><strong>Multi-Version Testing:</strong> Tests across Node.js 16.x, 18.x, 20.x, 22.x, 24.x</li>
+                        <li><strong>Performance Regression Detection:</strong> Detects performance regressions in PRs</li>
+                        <li><strong>GitHub Pages Deployment:</strong> Automatically deploys results to GitHub Pages</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>🔧 Run Your Own Tests</h3>
                     <p>To run these benchmarks yourself:</p>
-                    <div class="code-block">git clone https://github.com/tobrien/async-node-stats.git
+                    <div class="code-block"># Clone and setup
+git clone https://github.com/tobrien/async-node-stats.git
 cd async-node-stats
 npm install
-npm run benchmark
-npm run memory-test</div>
-                    
-                    <h3>Available Data Files</h3>
-                    <ul id="data-files">
-                        <li><a href="detailed-results.json">Detailed Results (JSON)</a></li>
-                        <li><a href="version-comparison.json">Version Comparison (JSON)</a></li>
-                        <li><a href="chart-data.json">Chart Data (JSON)</a></li>
-                        <li><a href="SUMMARY.md">Summary Report (Markdown)</a></li>
+
+# Run all tests
+npm start all
+
+# Or run individual tests
+npm run benchmark      # Performance only
+npm run memory-test    # Memory analysis only
+npm run generate-report # Generate reports
+
+# Multi-version testing (requires NVM)
+./test-versions.sh</div>
+                </div>
+                
+                <div class="card">
+                    <h3>📈 Results Visualization</h3>
+                    <p>The project generates several types of output:</p>
+                    <ul>
+                        <li><strong>JSON Data Files:</strong> Raw performance and memory data</li>
+                        <li><strong>Markdown Reports:</strong> Human-readable summaries and analysis</li>
+                        <li><strong>Interactive HTML Dashboard:</strong> This website with charts and visualizations</li>
+                        <li><strong>GitHub Pages Site:</strong> Automatically updated results at your GitHub Pages URL</li>
                     </ul>
                 </div>
             </section>
@@ -328,7 +473,7 @@ npm run memory-test</div>
     
     <script>
         // Initialize charts and load data
-        let performanceChart, memoryChart;
+        let basicOverheadChart, nestedOverheadChart, memoryChart;
         
         async function loadData() {
             try {
@@ -360,6 +505,17 @@ npm run memory-test</div>
                     console.log('Summary markdown not available');
                 }
                 
+                // Load analysis content
+                try {
+                    const analysisResponse = await fetch('NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md');
+                    if (analysisResponse.ok) {
+                        const analysisContent = await analysisResponse.text();
+                        updateAnalysisContent(analysisContent);
+                    }
+                } catch (error) {
+                    console.log('Analysis content not available');
+                }
+                
             } catch (error) {
                 console.error('Error loading data:', error);
                 document.getElementById('performance-summary').innerHTML = '<div class="error">Error loading data. Please check that benchmark results are available.</div>';
@@ -367,17 +523,59 @@ npm run memory-test</div>
         }
         
         function initializeCharts(chartData) {
-            // Performance Chart
-            const perfCtx = document.getElementById('performanceChart').getContext('2d');
-            performanceChart = new Chart(perfCtx, {
+            // Basic Overhead Chart (separate from nested)
+            const basicCtx = document.getElementById('basicOverheadChart').getContext('2d');
+            const basicOverheadChart = new Chart(basicCtx, {
                 type: 'bar',
-                data: chartData.performanceChart,
+                data: {
+                    labels: chartData.performanceChart.labels,
+                    datasets: [chartData.performanceChart.datasets[0]] // Only the basic overhead
+                },
                 options: {
                     responsive: true,
                     plugins: {
                         title: {
                             display: true,
-                            text: 'AsyncLocalStorage Performance Overhead by Node.js Version'
+                            text: 'Basic AsyncLocalStorage Overhead by Node.js Version'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Overhead (%)'
+                            },
+                            max: Math.max(10, Math.max(...chartData.performanceChart.datasets[0].data) * 1.2)
+                        }
+                    }
+                }
+            });
+            
+            // Nested Overhead Chart (separate)
+            const nestedCtx = document.getElementById('nestedOverheadChart').getContext('2d');
+            const nestedOverheadChart = new Chart(nestedCtx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.performanceChart.labels,
+                    datasets: [{
+                        ...chartData.performanceChart.datasets[1], // Nested overhead data
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Nested AsyncLocalStorage Overhead by Node.js Version'
+                        },
+                        legend: {
+                            display: false
                         }
                     },
                     scales: {
@@ -436,20 +634,34 @@ npm run memory-test</div>
         function updatePerformanceSummary(data) {
             if (data.benchmarkResults && data.benchmarkResults.length > 0) {
                 const latest = data.benchmarkResults[data.benchmarkResults.length - 1];
-                let html = '<h3>Latest Performance Results</h3>';
-                html += '<table><thead><tr><th>Test Case</th><th>ALS Overhead</th><th>Nested Overhead</th><th>Memory Impact</th></tr></thead><tbody>';
+                let html = `<h3>Performance Results for Node.js ${latest.nodeVersion}</h3>`;
+                html += '<p>This table shows the performance impact for the most recent Node.js version tested. Results are averaged across multiple test runs.</p>';
+                html += '<table><thead><tr><th>Test Case</th><th>Basic ALS Overhead</th><th>Nested ALS Overhead</th><th>Memory Impact</th></tr></thead><tbody>';
                 
                 for (const benchmark of latest.benchmarks) {
                     const memoryMB = (benchmark.overhead.memoryRSSBytes / 1024 / 1024).toFixed(2);
+                    const basicOverhead = benchmark.overhead.timePercent.toFixed(2);
+                    const nestedOverhead = benchmark.overhead.nestedTimePercent.toFixed(2);
+                    
+                    // Add color coding for overhead levels
+                    const basicClass = parseFloat(basicOverhead) > 15 ? 'danger' : parseFloat(basicOverhead) > 5 ? 'warning' : 'success';
+                    const nestedClass = parseFloat(nestedOverhead) > 50 ? 'danger' : parseFloat(nestedOverhead) > 25 ? 'warning' : 'success';
+                    
                     html += `<tr>
                         <td>${benchmark.name}</td>
-                        <td>${benchmark.overhead.timePercent.toFixed(2)}%</td>
-                        <td>${benchmark.overhead.nestedTimePercent.toFixed(2)}%</td>
+                        <td class="${basicClass}">${basicOverhead}%</td>
+                        <td class="${nestedClass}">${nestedOverhead}%</td>
                         <td>${memoryMB}MB</td>
                     </tr>`;
                 }
                 
                 html += '</tbody></table>';
+                html += '<div class="card" style="margin-top: 1rem;"><h4>Understanding the Results</h4>';
+                html += '<ul>';
+                html += '<li><strong>Basic ALS Overhead:</strong> Performance impact of using AsyncLocalStorage.run() vs not using it</li>';
+                html += '<li><strong>Nested ALS Overhead:</strong> Additional impact when using nested AsyncLocalStorage contexts</li>';
+                html += '<li><strong>Memory Impact:</strong> Additional memory usage when using AsyncLocalStorage</li>';
+                html += '</ul></div>';
                 document.getElementById('performance-summary').innerHTML = html;
             }
         }
@@ -485,6 +697,32 @@ npm run memory-test</div>
                 
                 document.getElementById('recommendations-content').innerHTML = recommendations;
             }
+        }
+        
+        function updateAnalysisContent(analysisMarkdown) {
+            // Convert markdown to HTML (simplified)
+            let html = analysisMarkdown
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+                .replace(/^- (.*$)/gim, '<li>$1</li>')
+                .replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^(.)/gm, '<p>$1')
+                .replace(/<\/p><p><h/g, '</p><h')
+                .replace(/<\/p><p><li>/g, '</p><ul><li>')
+                .replace(/<\/li><p>/g, '</li></ul><p>');
+            
+            // Clean up HTML
+            html = html.replace(/<p><\/p>/g, '');
+            html = html.replace(/<p>(<h[1-6]>)/g, '$1');
+            html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+            
+            document.getElementById('analysis-content').innerHTML = html;
         }
         
         function updateLastUpdated(timestamp) {
