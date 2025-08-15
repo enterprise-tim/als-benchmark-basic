@@ -1,18 +1,18 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [ main ]
   workflow_run:
     workflows: ["AsyncLocalStorage Benchmark"]
     types:
       - completed
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: "pages-${{ github.ref }}"
@@ -20,151 +20,14 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest-16-cores
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x, 20.x, 22.x, 24.x]
-      fail-fast: false
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
     
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Download latest benchmark results
-      if: github.event_name == 'workflow_run'
-      uses: actions/download-artifact@v4
-      with:
-        name: version-comparison
-        path: ./latest-results
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        run-id: ${{ github.event.workflow_run.id }}
-    
-    - name: Run benchmarks for pages (if no existing results)
-      if: github.event_name != 'workflow_run'
-      run: |
-        npm run benchmark
-        npm run memory-test
-        npm run generate-report
-    
-    - name: Copy latest results to docs
-      if: github.event_name == 'workflow_run'
-      run: |
-        if [ -d "./latest-results" ]; then
-          cp -r ./latest-results/* ./docs/ 2>/dev/null || true
-        fi
-    
-    - name: Build documentation site
-      run: |
-        # Ensure docs directory exists
-        mkdir -p docs
-        
-        # Generate the main index.html if it doesn't exist
-        if [ ! -f "docs/index.html" ]; then
-          node src/generate-docs.js
-        fi
-        
-        # Copy any additional assets
-        cp -r results/* docs/ 2>/dev/null || true
-        
-        # Ensure we have some content
-        if [ ! -f "docs/index.html" ]; then
-          cat > docs/index.html << 'EOF'
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>AsyncLocalStorage Performance Analysis</title>
-            <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; }
-                .container { max-width: 1200px; margin: 0 auto; }
-                .header { text-align: center; margin-bottom: 40px; }
-                .results { display: grid; gap: 20px; margin-top: 30px; }
-                .card { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff; }
-                .metric { display: flex; justify-content: space-between; margin: 10px 0; }
-                .metric-name { font-weight: 600; }
-                .metric-value { font-family: monospace; }
-                .warning { border-left-color: #ffc107; }
-                .danger { border-left-color: #dc3545; }
-                .success { border-left-color: #28a745; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>AsyncLocalStorage Performance Analysis</h1>
-                    <p>Comprehensive performance and memory analysis of Node.js AsyncLocalStorage across versions</p>
-                </div>
-                
-                <div class="card">
-                    <h2>About This Analysis</h2>
-                    <p>This site provides detailed performance benchmarks for Node.js AsyncLocalStorage, comparing overhead across different versions and usage patterns.</p>
-                    
-                    <h3>Test Categories</h3>
-                    <ul>
-                        <li><strong>Performance Benchmarks:</strong> Time overhead comparison with and without AsyncLocalStorage</li>
-                        <li><strong>Memory Profiling:</strong> Memory usage analysis and leak detection</li>
-                        <li><strong>Concurrent Testing:</strong> Performance under concurrent load</li>
-                        <li><strong>Version Comparison:</strong> Cross-version analysis of improvements</li>
-                    </ul>
-                </div>
-                
-                <div class="card">
-                    <h2>Quick Start</h2>
-                    <p>To run these benchmarks yourself:</p>
-                    <pre><code>git clone https://github.com/tobrien/async-node-stats.git
-        cd async-node-stats
-        npm install
-        npm run benchmark
-        npm run memory-test</code></pre>
-                </div>
-                
-                <div class="card">
-                    <h2>Latest Results</h2>
-                    <p>Benchmark results are automatically updated when new tests are run. Check the repository for the latest JSON data files in the <code>results/</code> directory.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        EOF
-        fi
-    
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-    
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: pages-build-node-${{ matrix.node-version }}
-        path: docs/
-        retention-days: 1
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest-16-cores
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Download all build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: ./all-builds
-    
-    - name: Setup Node.js (latest)
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
@@ -173,27 +36,89 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Aggregate results from all versions
+    - name: Download benchmark artifacts
+      if: github.event_name == 'workflow_run'
+      uses: actions/download-artifact@v4
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+        path: ./downloaded-artifacts
+    
+    - name: Download benchmark artifacts (manual dispatch)
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/download-artifact@v4
+      with:
+        name: version-comparison
+        path: ./downloaded-artifacts
+    
+    - name: Prepare site data
       run: |
+        # Create docs directory and copy existing site
         mkdir -p docs
         
-        # Copy base documentation structure from the first available build
-        FIRST_BUILD=$(find all-builds -name "pages-build-node-*" -type d | head -1)
-        if [ -d "$FIRST_BUILD" ]; then
-          cp -r "$FIRST_BUILD"/* docs/
+        # Copy the existing sophisticated site
+        cp docs/index.html docs/index.html.bak 2>/dev/null || true
+        cp docs/*.html docs/ 2>/dev/null || true
+        cp docs/*.md docs/ 2>/dev/null || true
+        
+        # Process downloaded artifacts
+        if [ -d "./downloaded-artifacts" ]; then
+          echo "Processing benchmark artifacts..."
+          
+          # Find and copy all benchmark results
+          find ./downloaded-artifacts -name "*.json" -exec cp {} docs/ \;
+          find ./downloaded-artifacts -name "*.md" -exec cp {} docs/ \;
+          
+          # If we have version comparison data, use it
+          if [ -f "./downloaded-artifacts/version-comparison/docs/chart-data.json" ]; then
+            cp ./downloaded-artifacts/version-comparison/docs/* docs/ 2>/dev/null || true
+          fi
+          
+          # Generate reports from the downloaded data
+          if [ -f "docs/detailed-results.json" ] || [ -f "docs/chart-data.json" ]; then
+            echo "Found benchmark data, generating reports..."
+            node src/report-generator.js || echo "Report generator failed, using existing data"
+          fi
+        else
+          echo "No benchmark artifacts found, running fresh benchmarks..."
+          npm run benchmark
+          npm run memory-test
+          npm run generate-report
         fi
         
-        # Merge results from all Node.js versions
-        for build_dir in all-builds/pages-build-node-*/; do
-          if [ -d "$build_dir" ]; then
-            echo "Processing build from: $build_dir"
-            # Copy any version-specific results
-            cp -r "$build_dir"/* docs/ 2>/dev/null || true
-          fi
-        done
+        # Ensure we have the main site file
+        if [ ! -f "docs/index.html" ]; then
+          echo "Copying main site template..."
+          cp docs/index.html docs/index.html 2>/dev/null || node src/generate-docs.js
+        fi
         
-        # Generate comprehensive comparison report
-        node src/report-generator.js || echo "Report generator not available, using existing docs"
+        # List what we have for debugging
+        echo "Final docs directory contents:"
+        ls -la docs/
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: github-pages-build
+        path: docs/
+        retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: github-pages-build
+        path: ./docs
     
     - name: Setup Pages
       uses: actions/configure-pages@v4
@@ -201,7 +126,7 @@ jobs:
     - name: Upload to GitHub Pages
       uses: actions/upload-pages-artifact@v3
       with:
-        path: docs/
+        path: ./docs
     
     - name: Deploy to GitHub Pages
       id: deployment
