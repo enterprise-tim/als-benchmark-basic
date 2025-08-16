@@ -19,7 +19,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         
       - name: Setup Node.js
@@ -31,43 +31,61 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Download latest benchmark artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: version-comparison
-          path: ./downloaded-artifacts
-        continue-on-error: true
+      - name: Download latest benchmark release
+        run: |
+          echo "📥 Downloading latest benchmark release..."
+          
+          # Install jq for JSON parsing
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          # Get the latest release
+          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name // empty')
+          
+          if [ -n "$LATEST_RELEASE" ] && [[ "$LATEST_RELEASE" == benchmark-results-* ]]; then
+            echo "Found latest benchmark release: $LATEST_RELEASE"
+            
+            # Download the results archive
+            curl -L -o "benchmark-results.tar.gz" "https://github.com/${{ github.repository }}/releases/download/$LATEST_RELEASE/async-node-stats-benchmark-$(echo $LATEST_RELEASE | sed 's/benchmark-results-//').tar.gz"
+            
+            if [ -f "benchmark-results.tar.gz" ]; then
+              echo "Downloaded benchmark results, extracting..."
+              tar -xzf benchmark-results.tar.gz
+              
+              # Copy results to the expected locations
+              if [ -d "results" ]; then
+                cp -r results/* ./results/ 2>/dev/null || true
+              fi
+              
+              if [ -d "docs" ]; then
+                cp -r docs/* ./docs/ 2>/dev/null || true
+              fi
+              
+              echo "Benchmark results extracted successfully"
+              ls -la results/versions/ 2>/dev/null || echo "No version results found"
+            else
+              echo "Failed to download benchmark results"
+            fi
+          else
+            echo "No benchmark release found, using existing data if available..."
+          fi
         
       - name: Prepare benchmark data
         run: |
           echo "📊 Preparing benchmark data for site build..."
           
-          # Create results directory structure
-          mkdir -p results/versions
-          
-          # Process downloaded benchmark artifacts
-          if [ -d "./downloaded-artifacts" ] && [ "$(ls -A downloaded-artifacts 2>/dev/null)" ]; then
-            echo "Processing benchmark artifacts..."
-            
-            # Copy the results and docs from the artifacts
-            if [ -d "./downloaded-artifacts/results" ]; then
-              echo "Copying results..."
-              cp -r ./downloaded-artifacts/results/* results/ 2>/dev/null || true
-            fi
-            
-            if [ -d "./downloaded-artifacts/docs" ]; then
-              echo "Copying docs..."
-              cp -r ./downloaded-artifacts/docs/* docs/ 2>/dev/null || true
-            fi
-          else
-            echo "No benchmark artifacts found, using existing data if available..."
-          fi
+          # Create results directory structure if it doesn't exist
+          mkdir -p results/versions docs
           
           # Generate reports from the available data
           if [ -d "results/versions" ] && [ "$(ls -A results/versions 2>/dev/null)" ]; then
             echo "Found benchmark data, generating reports..."
             npm run compare-versions || echo "Version comparison failed, continuing with build"
             npm run generate-report || echo "Report generation failed, continuing with build"
+          else
+            echo "No benchmark data found, creating placeholder data..."
+            # Create a simple placeholder to prevent build failures
+            mkdir -p results/versions/node_placeholder
+            echo '{"nodeVersion": "v0.0.0", "timestamp": "2025-01-01", "benchmarks": []}' > results/versions/node_placeholder/benchmark_placeholder.json
           fi
         
       - name: Build React app
