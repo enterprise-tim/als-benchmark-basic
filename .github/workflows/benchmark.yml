@@ -327,7 +327,7 @@ jobs:
       run: |
         echo "📦 Preparing release assets..."
         
-        # Create a timestamp for the release
+        # Create timestamp
         TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
         RELEASE_TAG="benchmark-results-${TIMESTAMP}"
         
@@ -411,7 +411,8 @@ EOF
         
         # Set outputs for the next step
         echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
-        echo "archive_name=async-node-stats-benchmark-${TIMESTAMP}.tar.gz" >> $GITHUB_OUTPUT
+        echo "archive_name=benchmark-results.tar.gz" >> $GITHUB_OUTPUT
+        echo "generated_at=$(date -u -Iseconds)" >> $GITHUB_OUTPUT
     
     - name: Create Release
       id: create_release
@@ -425,41 +426,15 @@ EOF
         draft: false
         prerelease: false
     
-    - name: Upload Release Assets
+    - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./${{ steps.prepare_release.outputs.archive_name }}
-        asset_name: ${{ steps.prepare_release.outputs.archive_name }}
+        asset_path: ./benchmark-results.tar.gz
+        asset_name: benchmark-results.tar.gz
         asset_content_type: application/gzip
-    
-    - name: Upload Release Assets - Individual Files
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release-package/manifest.json
-        asset_name: manifest.json
-        asset_content_type: application/json
-    
-    - name: Upload Release Assets - Results Directory
-      run: |
-        cd release-package
-        zip -r ../results.zip results/
-        cd ..
-      
-    - name: Upload Release Assets - Results Zip
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./results.zip
-        asset_name: results.zip
-        asset_content_type: application/zip
 
   performance-regression:
     runs-on: ubuntu-latest-4-cores
