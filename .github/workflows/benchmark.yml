@@ -255,6 +255,7 @@ jobs:
     - name: Generate version comparison report
       run: |
         echo "🔍 Generating comprehensive version comparison report..."
+        # Note: We generate docs here for workflow validation, but don't include them in the release
         if npm run compare-versions; then
           echo "📊 Comparison report generated successfully"
           ls -la docs/
@@ -272,6 +273,7 @@ jobs:
     - name: Generate additional reports
       run: |
         echo "📝 Generating additional performance reports..."
+        # Note: We generate docs here for workflow validation, but don't include them in the release
         if npm run generate-report; then
           echo "📈 Additional reports generated successfully"
           ls -la docs/
@@ -294,7 +296,6 @@ jobs:
         name: version-comparison
         path: |
           public/results/
-          docs/
         retention-days: 30
 
   create-release:
@@ -334,7 +335,7 @@ jobs:
         # Create release directory
         mkdir -p release-package
         
-        # Copy benchmark results and docs
+        # Copy only benchmark results (no docs)
         if [ -d "./release-assets/public/results" ]; then
           cp -r ./release-assets/public/results release-package/
         elif [ -d "./release-assets/results" ]; then
@@ -346,9 +347,7 @@ jobs:
           fi
         fi
         
-        if [ -d "./release-assets/docs" ]; then
-          cp -r ./release-assets/docs release-package/
-        fi
+        echo "📁 Only copying benchmark results - docs are generated during site build"
         
         # Verify we have actual data
         echo "📊 Checking release package contents..."
@@ -377,11 +376,11 @@ jobs:
 Generated on: $(date -u)
 
 ## Contents
-- \`results/\` - Raw benchmark data for each Node.js version
-- \`docs/\` - Generated reports and analysis
+- results/ - Raw benchmark data for each Node.js version
 
 ## Usage
 Download this release and extract the contents to use with the async-node-stats application.
+The docs directory is generated during site build and is not included in this release.
 
 ## Node.js Versions Tested
 $(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /' || echo "- No versions found")
@@ -397,17 +396,18 @@ $(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sor
   ],
   "totalSize": "$(du -sh release-package | cut -f1)",
   "workflowRun": "${{ github.run_id }}",
-  "dataFiles": $TOTAL_FILES
+  "dataFiles": $TOTAL_FILES,
+  "note": "This release contains only raw benchmark data. Documentation is generated during site build."
 }
 EOF
         
         # Create a compressed archive
-        tar -czf "async-node-stats-benchmark-${TIMESTAMP}.tar.gz" -C release-package .
+        tar -czf "benchmark-results.tar.gz" -C release-package .
         
         echo "Release tag: $RELEASE_TAG"
         echo "Release assets prepared:"
         ls -la release-package/
-        echo "Archive created: async-node-stats-benchmark-${TIMESTAMP}.tar.gz"
+        echo "Archive created: benchmark-results.tar.gz"
         
         # Set outputs for the next step
         echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
@@ -422,7 +422,7 @@ EOF
       with:
         tag_name: ${{ steps.prepare_release.outputs.release_tag }}
         release_name: "Benchmark Results - ${{ steps.prepare_release.outputs.release_tag }}"
-        body: "## AsyncLocalStorage Benchmark Results\n\nThis release contains the latest benchmark results for AsyncLocalStorage performance across different Node.js versions.\n\n### What's Included\n- Raw benchmark data for each tested Node.js version\n- Generated performance reports and analysis\n- Memory profiling results\n- Version comparison charts and tables\n\n### Generated On\n${{ steps.prepare_release.outputs.generated_at }}\n\n### Workflow Run\n[${{ github.workflow }} #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n### Usage\nDownload the `async-node-stats-benchmark-*.tar.gz` file and extract it to use with the async-node-stats application.\n\nThe deploy workflow will automatically download and use the latest release for building the site."
+        body: "## AsyncLocalStorage Benchmark Results\n\nThis release contains the latest benchmark results for AsyncLocalStorage performance across different Node.js versions.\n\n### What's Included\n- Raw benchmark data for each tested Node.js version\n- Memory profiling results\n- Performance metrics and timing data\n\n### What's NOT Included\n- Documentation (generated during site build)\n- Generated reports (created dynamically)\n- Static HTML/CSS files\n\n### Generated On\n${{ steps.prepare_release.outputs.generated_at }}\n\n### Workflow Run\n[${{ github.workflow }} #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n### Usage\nDownload the `benchmark-results.tar.gz` file and extract it to use with the async-node-stats application.\n\nThe deploy workflow will automatically download and use the latest release for building the site."
         draft: false
         prerelease: false
     
