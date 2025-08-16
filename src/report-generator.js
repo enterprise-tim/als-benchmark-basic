@@ -90,21 +90,79 @@ class ReportGenerator {
       report += `**Platform:** ${latestBenchmark.platform} ${latestBenchmark.arch}\n`;
       report += `**Test Date:** ${latestBenchmark.timestamp}\n\n`;
 
-      const avgOverhead = latestBenchmark.benchmarks.reduce((sum, b) => sum + b.overhead.timePercent, 0) / latestBenchmark.benchmarks.length;
-      const avgNestedOverhead = latestBenchmark.benchmarks.reduce((sum, b) => sum + b.overhead.nestedTimePercent, 0) / latestBenchmark.benchmarks.length;
+      // Handle both traditional and distributed benchmarks
+      const traditionalBenchmarks = latestBenchmark.benchmarks.filter(b => !b.type || b.type !== 'distributed');
+      const distributedBenchmarks = latestBenchmark.benchmarks.filter(b => b.type === 'distributed');
 
-      report += `### Performance Overview\n\n`;
-      report += `- **Average AsyncLocalStorage Overhead:** ${avgOverhead.toFixed(2)}%\n`;
-      report += `- **Average Nested ALS Overhead:** ${avgNestedOverhead.toFixed(2)}%\n`;
-      report += `- **Performance Impact:** ${this.getPerformanceAssessment(avgOverhead)}\n\n`;
+      if (traditionalBenchmarks.length > 0) {
+        const avgOverhead = traditionalBenchmarks.reduce((sum, b) => sum + (b.overhead?.timePercent || 0), 0) / traditionalBenchmarks.length;
+        const avgNestedOverhead = traditionalBenchmarks.reduce((sum, b) => sum + (b.overhead?.nestedTimePercent || 0), 0) / traditionalBenchmarks.length;
 
-      report += `### Detailed Results\n\n`;
-      report += `| Test Case | ALS Overhead | Nested Overhead | Memory Impact |\n`;
-      report += `|-----------|--------------|-----------------|---------------|\n`;
+        report += `### Traditional Performance Overview\n\n`;
+        report += `- **Average AsyncLocalStorage Overhead:** ${avgOverhead.toFixed(2)}%\n`;
+        report += `- **Average Nested ALS Overhead:** ${avgNestedOverhead.toFixed(2)}%\n`;
+        report += `- **Performance Impact:** ${this.getPerformanceAssessment(avgOverhead)}\n\n`;
 
-      for (const benchmark of latestBenchmark.benchmarks) {
-        const memoryMB = (benchmark.overhead.memoryRSSBytes / 1024 / 1024).toFixed(2);
-        report += `| ${benchmark.name} | ${benchmark.overhead.timePercent.toFixed(2)}% | ${benchmark.overhead.nestedTimePercent.toFixed(2)}% | ${memoryMB}MB |\n`;
+        report += `### Traditional Test Results\n\n`;
+        report += `| Test Case | ALS Overhead | Nested Overhead | Memory Impact |\n`;
+        report += `|-----------|--------------|-----------------|---------------|\n`;
+
+        for (const benchmark of traditionalBenchmarks) {
+          const memoryMB = benchmark.overhead?.memoryRSSBytes 
+            ? (benchmark.overhead.memoryRSSBytes / 1024 / 1024).toFixed(2)
+            : 'N/A';
+          const timePercent = benchmark.overhead?.timePercent?.toFixed(2) || 'N/A';
+          const nestedPercent = benchmark.overhead?.nestedTimePercent?.toFixed(2) || 'N/A';
+          report += `| ${benchmark.name} | ${timePercent}% | ${nestedPercent}% | ${memoryMB}MB |\n`;
+        }
+      }
+
+      if (distributedBenchmarks.length > 0) {
+        report += `\n### Distributed System Performance Overview\n\n`;
+        
+        // Calculate distributed performance metrics
+        const avgThroughput = distributedBenchmarks.reduce((sum, b) => sum + (b.distributed?.avgThroughput || 0), 0) / distributedBenchmarks.length;
+        const avgLatencyP99 = distributedBenchmarks.reduce((sum, b) => sum + (b.distributed?.avgLatencyP99 || 0), 0) / distributedBenchmarks.length;
+        const avgErrorRate = distributedBenchmarks.reduce((sum, b) => sum + (b.distributed?.contextErrorRate || 0), 0) / distributedBenchmarks.length;
+        const avgDistributedOverhead = distributedBenchmarks.reduce((sum, b) => sum + (b.overhead?.distributedOverhead || 0), 0) / distributedBenchmarks.length;
+
+        report += `- **Average Throughput:** ${avgThroughput.toFixed(2)} req/s\n`;
+        report += `- **Average P99 Latency:** ${avgLatencyP99.toFixed(2)}ms\n`;
+        report += `- **Average Context Error Rate:** ${(avgErrorRate * 100).toFixed(6)}%\n`;
+        report += `- **Average Distributed Overhead:** ${avgDistributedOverhead.toFixed(2)}%\n\n`;
+
+        report += `### Distributed Test Results\n\n`;
+        report += `| Test Case | Throughput | P99 Latency | Error Rate | Workers | Distributed Overhead |\n`;
+        report += `|-----------|------------|-------------|------------|---------|---------------------|\n`;
+
+        for (const benchmark of distributedBenchmarks) {
+          const throughput = benchmark.distributed?.avgThroughput?.toFixed(2) || 'N/A';
+          const latency = benchmark.distributed?.avgLatencyP99?.toFixed(2) || 'N/A';
+          const errorRate = benchmark.distributed?.contextErrorRate 
+            ? (benchmark.distributed.contextErrorRate * 100).toFixed(6) + '%'
+            : 'N/A';
+          const workers = benchmark.distributed?.workerCount || 'N/A';
+          const overhead = benchmark.overhead?.distributedOverhead?.toFixed(2) || 'N/A';
+          report += `| ${benchmark.name} | ${throughput} req/s | ${latency}ms | ${errorRate} | ${workers} | ${overhead}% |\n`;
+        }
+
+        // Add distributed system recommendations
+        report += `\n#### Distributed System Analysis\n\n`;
+        if (avgErrorRate < 0.001) {
+          report += `✅ **Excellent context isolation** - Very low error rate indicates robust AsyncLocalStorage behavior in distributed scenarios.\n`;
+        } else if (avgErrorRate < 0.01) {
+          report += `⚠️ **Good context isolation** - Low error rate with room for optimization in high-concurrency scenarios.\n`;
+        } else {
+          report += `❌ **Context isolation issues** - Higher error rate suggests potential context mixing in distributed operations.\n`;
+        }
+
+        if (avgDistributedOverhead < 5) {
+          report += `✅ **Minimal distributed overhead** - AsyncLocalStorage scales well across multiple processes/workers.\n`;
+        } else if (avgDistributedOverhead < 20) {
+          report += `⚠️ **Moderate distributed overhead** - Consider optimizing context propagation in distributed scenarios.\n`;
+        } else {
+          report += `❌ **Significant distributed overhead** - AsyncLocalStorage may not be optimal for your distributed architecture.\n`;
+        }
       }
     }
 
@@ -151,21 +209,63 @@ class ReportGenerator {
     let recommendations = [];
 
     if (benchmarkResult) {
-      const avgOverhead = benchmarkResult.benchmarks.reduce((sum, b) => sum + b.overhead.timePercent, 0) / benchmarkResult.benchmarks.length;
-      
-      if (avgOverhead < 5) {
-        recommendations.push('✅ **AsyncLocalStorage is suitable for your use case** - Overhead is minimal across all test scenarios.');
-      } else if (avgOverhead < 15) {
-        recommendations.push('⚠️ **Use AsyncLocalStorage with consideration** - Moderate overhead detected. Profile your specific use case.');
-        recommendations.push('💡 **Optimization tips:**\n  - Minimize data stored in AsyncLocalStorage\n  - Avoid deeply nested async operations when possible\n  - Consider alternatives for high-frequency operations');
-      } else {
-        recommendations.push('❌ **AsyncLocalStorage may not be suitable** - Significant overhead detected.');
-        recommendations.push('🔍 **Consider alternatives:**\n  - Manual context passing\n  - Request-scoped dependency injection\n  - Thread-local storage alternatives');
+      // Handle traditional benchmarks
+      const traditionalBenchmarks = benchmarkResult.benchmarks.filter(b => !b.type || b.type !== 'distributed');
+      if (traditionalBenchmarks.length > 0) {
+        const avgOverhead = traditionalBenchmarks.reduce((sum, b) => sum + (b.overhead?.timePercent || 0), 0) / traditionalBenchmarks.length;
+        
+        if (avgOverhead < 5) {
+          recommendations.push('✅ **AsyncLocalStorage is suitable for your use case** - Overhead is minimal across all test scenarios.');
+        } else if (avgOverhead < 15) {
+          recommendations.push('⚠️ **Use AsyncLocalStorage with consideration** - Moderate overhead detected. Profile your specific use case.');
+          recommendations.push('💡 **Optimization tips:**\n  - Minimize data stored in AsyncLocalStorage\n  - Avoid deeply nested async operations when possible\n  - Consider alternatives for high-frequency operations');
+        } else {
+          recommendations.push('❌ **AsyncLocalStorage may not be suitable** - Significant overhead detected.');
+          recommendations.push('🔍 **Consider alternatives:**\n  - Manual context passing\n  - Request-scoped dependency injection\n  - Thread-local storage alternatives');
+        }
+
+        const nestedOverhead = traditionalBenchmarks.reduce((sum, b) => sum + (b.overhead?.nestedTimePercent || 0), 0) / traditionalBenchmarks.length;
+        if (nestedOverhead > avgOverhead * 2) {
+          recommendations.push('⚠️ **Avoid deeply nested AsyncLocalStorage calls** - Nesting significantly increases overhead.');
+        }
       }
 
-      const nestedOverhead = benchmarkResult.benchmarks.reduce((sum, b) => sum + b.overhead.nestedTimePercent, 0) / benchmarkResult.benchmarks.length;
-      if (nestedOverhead > avgOverhead * 2) {
-        recommendations.push('⚠️ **Avoid deeply nested AsyncLocalStorage calls** - Nesting significantly increases overhead.');
+      // Handle distributed benchmarks
+      const distributedBenchmarks = benchmarkResult.benchmarks.filter(b => b.type === 'distributed');
+      if (distributedBenchmarks.length > 0) {
+        const avgErrorRate = distributedBenchmarks.reduce((sum, b) => sum + (b.distributed?.contextErrorRate || 0), 0) / distributedBenchmarks.length;
+        const avgDistributedOverhead = distributedBenchmarks.reduce((sum, b) => sum + (b.overhead?.distributedOverhead || 0), 0) / distributedBenchmarks.length;
+
+        recommendations.push('\n### Distributed System Recommendations\n\n');
+
+        if (avgErrorRate < 0.001) {
+          recommendations.push('✅ **Excellent distributed performance** - AsyncLocalStorage maintains perfect context isolation across processes/workers.');
+        } else if (avgErrorRate < 0.01) {
+          recommendations.push('⚠️ **Good distributed performance** - Low error rate with room for optimization in high-concurrency scenarios.');
+          recommendations.push('💡 **Optimization tips:**\n  - Review context propagation in worker/process boundaries\n  - Ensure proper context cleanup in distributed operations\n  - Monitor for context mixing under load');
+        } else {
+          recommendations.push('❌ **Distributed context isolation issues** - Higher error rate indicates potential context mixing.');
+          recommendations.push('🔍 **Investigation needed:**\n  - Check worker/process context boundaries\n  - Review async operation context handling\n  - Consider alternative distributed context strategies');
+        }
+
+        if (avgDistributedOverhead < 5) {
+          recommendations.push('✅ **Minimal distributed overhead** - AsyncLocalStorage scales efficiently across your distributed architecture.');
+        } else if (avgDistributedOverhead < 20) {
+          recommendations.push('⚠️ **Moderate distributed overhead** - Consider optimizing context propagation and storage.');
+          recommendations.push('💡 **Scaling tips:**\n  - Optimize context object size and structure\n  - Review context propagation patterns\n  - Consider context pooling for high-frequency operations');
+        } else {
+          recommendations.push('❌ **Significant distributed overhead** - AsyncLocalStorage may not be optimal for your distributed architecture.');
+          recommendations.push('🔍 **Consider alternatives:**\n  - Request-scoped context passing\n  - Distributed tracing with explicit context\n  - Event-driven context propagation');
+        }
+
+        // Add specific recommendations based on execution modes
+        const executionModes = [...new Set(distributedBenchmarks.map(b => b.config?.executionMode))];
+        if (executionModes.includes('cluster')) {
+          recommendations.push('💡 **Cluster mode insights:**\n  - Monitor inter-process context propagation\n  - Ensure proper context serialization if needed\n  - Consider cluster-specific context strategies');
+        }
+        if (executionModes.includes('worker')) {
+          recommendations.push('💡 **Worker thread insights:**\n  - Worker threads share the same process context\n  - Monitor for context pollution between workers\n  - Consider worker-specific context isolation');
+        }
       }
     }
 
@@ -178,7 +278,7 @@ class ReportGenerator {
       recommendations.push('📊 **Run more comprehensive tests** - Generate both benchmark and memory test results for complete analysis.');
     }
 
-    return recommendations.map(rec => `${rec}\n`).join('\n');
+    return recommendations.join('\n\n');
   }
 
   async generateDetailedReport(benchmarkResults, memoryResults) {
@@ -217,10 +317,7 @@ class ReportGenerator {
   }
 
   async generateComparisonReport(benchmarkResults) {
-    if (benchmarkResults.length < 2) {
-      console.log('Not enough benchmark results for comparison report');
-      return;
-    }
+    if (benchmarkResults.length === 0) return;
 
     // Group by Node.js version
     const versionGroups = {};
@@ -242,22 +339,55 @@ class ReportGenerator {
       const latestResult = versionGroups[version]
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
       
-      const avgOverhead = latestResult.benchmarks.reduce((sum, b) => sum + b.overhead.timePercent, 0) / latestResult.benchmarks.length;
-      const avgNestedOverhead = latestResult.benchmarks.reduce((sum, b) => sum + b.overhead.nestedTimePercent, 0) / latestResult.benchmarks.length;
-      const totalMemoryOverhead = latestResult.benchmarks.reduce((sum, b) => sum + b.overhead.memoryRSSBytes, 0);
+      // Handle both traditional and distributed benchmarks
+      const traditionalBenchmarks = latestResult.benchmarks.filter(b => !b.type || b.type !== 'distributed');
+      const distributedBenchmarks = latestResult.benchmarks.filter(b => b.type === 'distributed');
+      
+      let avgOverhead = 0;
+      let avgNestedOverhead = 0;
+      let totalMemoryOverhead = 0;
+      
+      if (traditionalBenchmarks.length > 0) {
+        avgOverhead = traditionalBenchmarks.reduce((sum, b) => sum + (b.overhead?.timePercent || 0), 0) / traditionalBenchmarks.length;
+        avgNestedOverhead = traditionalBenchmarks.reduce((sum, b) => sum + (b.overhead?.nestedTimePercent || 0), 0) / traditionalBenchmarks.length;
+        totalMemoryOverhead = traditionalBenchmarks.reduce((sum, b) => sum + (b.overhead?.memoryRSSBytes || 0), 0);
+      }
 
-      comparison.comparisons.push({
+      const comparisonEntry = {
         nodeVersion: version,
         avgOverheadPercent: avgOverhead,
         avgNestedOverheadPercent: avgNestedOverhead,
         totalMemoryOverheadBytes: totalMemoryOverhead,
-        testResults: latestResult.benchmarks.map(b => ({
+        traditionalTestCount: traditionalBenchmarks.length,
+        distributedTestCount: distributedBenchmarks.length,
+        testResults: []
+      };
+
+      // Add traditional benchmark results
+      traditionalBenchmarks.forEach(b => {
+        comparisonEntry.testResults.push({
           name: b.name,
-          overheadPercent: b.overhead.timePercent,
-          nestedOverheadPercent: b.overhead.nestedTimePercent,
-          memoryOverheadBytes: b.overhead.memoryRSSBytes
-        }))
+          type: 'traditional',
+          overheadPercent: b.overhead?.timePercent || 0,
+          nestedOverheadPercent: b.overhead?.nestedTimePercent || 0,
+          memoryOverheadBytes: b.overhead?.memoryRSSBytes || 0
+        });
       });
+
+      // Add distributed benchmark results
+      distributedBenchmarks.forEach(b => {
+        comparisonEntry.testResults.push({
+          name: b.name,
+          type: 'distributed',
+          throughput: b.distributed?.avgThroughput || 0,
+          latencyP99: b.distributed?.avgLatencyP99 || 0,
+          errorRate: b.distributed?.contextErrorRate || 0,
+          distributedOverhead: b.overhead?.distributedOverhead || 0,
+          workerCount: b.distributed?.workerCount || 0
+        });
+      });
+
+      comparison.comparisons.push(comparisonEntry);
     }
 
     await fs.writeFile(
@@ -312,12 +442,50 @@ class ReportGenerator {
       chartData.performanceChart.labels.push(version);
       
       if (data.benchmarks.length > 0) {
-        const avgOverhead = data.benchmarks.reduce((sum, result) => {
-          const benchmarkAvg = result.benchmarks.reduce((s, b) => s + b.overhead.timePercent, 0) / result.benchmarks.length;
-          return sum + benchmarkAvg;
-        }, 0) / data.benchmarks.length;
+        // Handle both traditional and distributed benchmarks
+        const traditionalResults = data.benchmarks.filter(result => 
+          result.benchmarks.some(b => !b.type || b.type !== 'distributed')
+        );
+        const distributedResults = data.benchmarks.filter(result => 
+          result.benchmarks.some(b => b.type === 'distributed')
+        );
         
-        chartData.performanceChart.datasets[0].data.push(avgOverhead.toFixed(2));
+        let avgOverhead = 0;
+        let resultCount = 0;
+        
+        // Calculate traditional benchmark overhead
+        if (traditionalResults.length > 0) {
+          const traditionalOverhead = traditionalResults.reduce((sum, result) => {
+            const traditionalBenchmarks = result.benchmarks.filter(b => !b.type || b.type !== 'distributed');
+            if (traditionalBenchmarks.length > 0) {
+              const benchmarkAvg = traditionalBenchmarks.reduce((s, b) => s + (b.overhead?.timePercent || 0), 0) / traditionalBenchmarks.length;
+              return sum + benchmarkAvg;
+            }
+            return sum;
+          }, 0);
+          avgOverhead += traditionalOverhead;
+          resultCount += traditionalResults.length;
+        }
+        
+        // Calculate distributed benchmark overhead (if available)
+        if (distributedResults.length > 0) {
+          const distributedOverhead = distributedResults.reduce((sum, result) => {
+            const distributedBenchmarks = result.benchmarks.filter(b => b.type === 'distributed');
+            if (distributedBenchmarks.length > 0) {
+              const benchmarkAvg = distributedBenchmarks.reduce((s, b) => s + (b.overhead?.distributedOverhead || 0), 0) / distributedBenchmarks.length;
+              return sum + benchmarkAvg;
+            }
+            return sum;
+          }, 0);
+          avgOverhead += distributedOverhead;
+          resultCount += distributedResults.length;
+        }
+        
+        if (resultCount > 0) {
+          chartData.performanceChart.datasets[0].data.push((avgOverhead / resultCount).toFixed(2));
+        } else {
+          chartData.performanceChart.datasets[0].data.push(0);
+        }
       } else {
         chartData.performanceChart.datasets[0].data.push(0);
       }
@@ -327,7 +495,7 @@ class ReportGenerator {
       if (data.memory.length > 0) {
         const avgMemoryOverhead = data.memory.reduce((sum, result) => {
           if (result.memoryTests && result.memoryTests.length > 0) {
-            const memoryAvg = result.memoryTests.reduce((s, test) => s + test.overhead.heapUsed, 0) / result.memoryTests.length;
+            const memoryAvg = result.memoryTests.reduce((s, test) => s + (test.overhead?.heapUsed || 0), 0) / result.memoryTests.length;
             return sum + memoryAvg;
           }
           return sum;

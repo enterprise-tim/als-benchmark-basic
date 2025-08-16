@@ -1,282 +1,172 @@
-# AsyncLocalStorage Performance Analysis
+# AsyncLocalStorage Performance Benchmark Suite
 
-A comprehensive performance testing suite for Node.js AsyncLocalStorage, designed to measure overhead across different versions and usage patterns.
+A comprehensive performance testing framework for Node.js AsyncLocalStorage across different execution models and Node.js versions.
 
-## 🎯 Purpose
+## 🚀 NEW: Comprehensive Distributed System Benchmarks
 
-This project helps answer the critical question: **"What is the overhead of using AsyncLocalStorage, and is there anything I should be worried about?"**
+The latest version includes a powerful new distributed benchmark system that really exercises AsyncLocalStorage under extreme conditions:
 
-## 🚀 Features
+### **Enhanced ALS Stress Testing**
+- **Context Nesting Depth**: Tests up to 20 levels of nested AsyncLocalStorage contexts
+- **Context Object Sizes**: Tests with 10, 100, and 1000+ property objects
+- **Rapid Context Switching**: Tests up to 10,000 context switches per second
+- **Concurrent Context Creation**: Tests up to 100 simultaneous context operations
+- **Deep Async Chains**: Tests context propagation through 20+ async operations
+- **Memory Pressure Scenarios**: Tests under memory stress conditions
+- **Garbage Collection Stress**: Tests during aggressive GC cycles
 
-- **Performance Benchmarks**: Compare execution time with and without AsyncLocalStorage
-- **Memory Profiling**: Analyze memory usage and detect potential leaks
-- **Multi-Version Testing**: Test across different Node.js versions using NVM
-- **Concurrent Testing**: Evaluate performance under concurrent load
-- **Automated Reporting**: Generate comprehensive reports and visualizations
-- **GitHub Integration**: Automated testing and GitHub Pages deployment
-- **CI/CD Ready**: GitHub Actions workflows for continuous testing
+### **Multi-Execution Mode Testing**
+- **Single Process**: Traditional single-threaded performance
+- **Worker Threads**: Multi-threaded performance within same process
+- **Cluster Mode**: Multi-process performance across process boundaries
 
-## 📊 What Gets Tested
+### **Traffic Profile Testing**
+- **Steady**: Consistent load testing
+- **Burst**: Sudden load spikes
+- **Surge**: Extreme load conditions
 
-### Performance Benchmarks
-- Small, medium, and large data objects
-- Synchronous and asynchronous operations
-- Nested AsyncLocalStorage contexts
-- Varying iteration counts to measure scalability
+## 📊 Integration with Existing Tools
 
-### Memory Analysis
-- Memory usage by object size
-- Memory leak detection over time
-- Concurrent operation memory impact
-- Garbage collection effectiveness
+**The new distributed benchmark is fully integrated** with your existing graphing and comparison system:
 
-### Cross-Version Analysis
-- Node.js 16.x through 22.x
-- Performance evolution over versions
-- Regression detection
-- Optimization improvements
+✅ **Automatic Result Processing**: Results are saved in the same format as traditional benchmarks  
+✅ **Unified Reporting**: Both traditional and distributed results appear in the same reports  
+✅ **Graph Integration**: Results automatically appear in your performance charts  
+✅ **Version Comparison**: Distributed results are included in version comparisons  
+✅ **GitHub Workflows**: CI/CD automatically runs both benchmark types  
 
-## 🛠 Installation
+## 🛠️ Usage
 
+### Quick Tests
 ```bash
-git clone https://github.com/tobrien/async-node-stats.git
-cd async-node-stats
-npm install
-```
-
-## 🏃‍♂️ Quick Start
-
-### Run All Tests
-```bash
-npm start all
-```
-
-### Individual Test Categories
-```bash
-# Performance benchmarks only
+# Run traditional benchmark only
 npm run benchmark
 
-# Memory profiling only
-npm run memory-test
+# Run distributed benchmark with enhanced ALS testing
+npm run benchmark-distributed
 
-# Generate reports from existing results
-npm run generate-report
+# Quick test (10 seconds)
+npm run benchmark-quick
+
+# Full comprehensive test matrix
+npm run benchmark-full
+
+# ALS-only stress testing
+npm run benchmark-als-stress
 ```
 
-### Multi-Version Testing
-Test across multiple Node.js versions using NVM:
+### Comprehensive Testing
 ```bash
-./test-versions.sh
+# Test all execution modes and traffic profiles
+npm run benchmark-full
+
+# Test only ALS with all execution modes
+npm run benchmark-als-stress
+
+# Run both traditional and distributed tests
+npm run test-all-distributed
 ```
 
-This will automatically:
-1. Install and test Node.js versions 16.20.2, 18.19.1, 20.11.0, 21.7.3, and 22.0.0
-2. Run benchmarks and memory tests for each version
-3. Generate a comprehensive comparison report
+## 📈 What You Get
 
-## 📈 Understanding the Results
+### **Traditional Benchmark Results**
+- AsyncLocalStorage overhead percentages
+- Memory usage impact
+- Nested context performance
+- Single-process performance
 
-### Performance Metrics
-- **Overhead Percentage**: How much slower operations are with AsyncLocalStorage
-- **Memory Impact**: Additional memory usage in MB
-- **Nested Overhead**: Performance impact of nested AsyncLocalStorage contexts
+### **Distributed Benchmark Results**
+- Multi-process/thread performance
+- Context isolation verification
+- Distributed overhead analysis
+- Worker/process scaling metrics
+- Context error rates across boundaries
 
-### Interpretation Guidelines
-- **< 5% overhead**: ✅ Minimal impact, safe for most use cases
-- **5-15% overhead**: ⚠️ Moderate impact, consider for high-throughput applications
-- **> 15% overhead**: ❌ Significant impact, use with caution
-
-### Memory Analysis
-- **Memory Growth**: Indicates potential memory leaks
-- **Concurrent Impact**: Memory usage under load
-- **GC Effectiveness**: How well garbage collection handles AsyncLocalStorage
-
-## 📊 Sample Results
-
-Here's what you can expect to see:
-
-```
-=== Performance Summary ===
-Node.js Version: v20.11.0
-Average AsyncLocalStorage Overhead: 3.2%
-Average Nested ALS Overhead: 8.7%
-Total Memory Overhead: 2.4MB
-
-Recommendations:
-✅ AsyncLocalStorage is suitable for your use case
-```
+### **Enhanced ALS Insights**
+- Context switching performance
+- Memory pressure handling
+- Garbage collection impact
+- Concurrent operation stability
+- Deep async chain reliability
 
 ## 🔧 Configuration
 
-### Custom Test Parameters
-Edit the test configurations in `src/benchmark.js`:
+The distributed benchmark automatically configures comprehensive testing:
 
 ```javascript
-const testConfigs = [
-  { name: 'Small Data', iterations: 10000, dataSize: 5, asyncOps: false },
-  { name: 'Custom Test', iterations: 5000, dataSize: 100, asyncOps: true },
-  // Add your own configurations
-];
-```
-
-### Node.js Versions
-Modify the versions tested in `test-versions.sh`:
-
-```bash
-VERSIONS=(
-    "16.20.2"
-    "18.19.1" 
-    "20.11.0"
-    "22.0.0"
-    # Add more versions
-)
-```
-
-## 📁 Project Structure
-
-```
-async-node-stats/
-├── src/
-│   ├── benchmark.js       # Core performance benchmarks
-│   ├── memory-test.js     # Memory profiling tests
-│   ├── report-generator.js # Report generation
-│   ├── generate-docs.js   # Documentation site generator
-│   └── index.js          # Main CLI interface
-├── .github/workflows/
-│   ├── benchmark.yml     # Automated testing
-│   └── pages.yml         # GitHub Pages deployment
-├── results/              # Test results (JSON)
-├── docs/                # Generated documentation
-├── test-versions.sh     # Multi-version testing script
-└── README.md
-```
-
-## 🤖 GitHub Actions Integration
-
-This project includes automated testing workflows:
-
-### Benchmark Workflow
-- Triggers on push, PR, and weekly schedule
-- Tests across Node.js 16.x, 18.x, 20.x, 22.x
-- Generates performance summaries
-- Detects performance regressions in PRs
-
-### GitHub Pages Deployment
-- Automatically deploys results to GitHub Pages
-- Updates documentation site with latest results
-- Provides web-based visualization of results
-
-## 📊 Results Visualization
-
-The project generates several types of output:
-
-### JSON Data Files
-- `benchmark_*.json` - Raw performance data
-- `memory_*.json` - Memory profiling results
-- `detailed-results.json` - Combined analysis
-- `version-comparison.json` - Cross-version comparison
-
-### Reports
-- `SUMMARY.md` - Human-readable summary
-- Interactive HTML dashboard
-- Charts and visualizations
-
-### GitHub Pages Site
-Access your results at: `https://[username].github.io/async-node-stats`
-
-## 🧪 Use Cases
-
-### Development Teams
-- Evaluate AsyncLocalStorage adoption impact
-- Set performance budgets and alerts
-- Track performance over time
-
-### Library Authors
-- Measure overhead of AsyncLocalStorage-based features
-- Document performance characteristics
-- Validate optimizations
-
-### DevOps Teams
-- Monitor performance in CI/CD pipelines
-- Detect performance regressions
-- Validate Node.js upgrade impact
-
-## 🔍 Example Scenarios
-
-### Scenario 1: Basic Web Application
-```javascript
-// Test with typical request context data
-const requestData = {
-  userId: 12345,
-  sessionId: 'abc123',
-  requestId: 'req-456',
-  metadata: { /* ... */ }
-};
-
-await als.run(requestData, async () => {
-  // Your application logic
-  await processRequest();
-});
-```
-
-### Scenario 2: Microservice with Tracing
-```javascript
-// Test with distributed tracing context
-const traceData = {
-  traceId: 'trace-789',
-  spanId: 'span-012',
-  baggage: { /* ... */ },
-  // Potentially large context objects
-};
-```
-
-### Scenario 3: High-Frequency Operations
-```javascript
-// Test impact on high-throughput scenarios
-for (let i = 0; i < 100000; i++) {
-  await als.run(contextData, async () => {
-    await quickOperation();
-  });
+alsTestScenarios: {
+  contextDepth: [1, 5, 10, 20],        // Nesting levels
+  contextSize: [10, 100, 1000],         // Object sizes
+  contextSwitching: [100, 1000, 10000], // Switch frequency
+  concurrentContexts: [10, 50, 100],    // Concurrency levels
+  asyncChainDepth: [5, 10, 20],         // Async chain depth
+  memoryPressure: true,                  // Memory stress testing
+  gcStress: true                         // GC stress testing
 }
 ```
 
-## 🤝 Contributing
+## 📋 GitHub Workflow Integration
 
-Contributions are welcome! Please consider:
+The main workflow now runs **both** benchmark types:
 
-1. **New Test Scenarios**: Add realistic use cases
-2. **Additional Metrics**: Propose new measurements
-3. **Visualization Improvements**: Enhance the reporting
-4. **Platform Support**: Test on different environments
-5. **Documentation**: Improve guides and examples
+1. **Traditional Benchmark**: Baseline performance comparison
+2. **Distributed Benchmark**: Enhanced ALS stress testing
+3. **Full Matrix**: All execution modes and profiles
+4. **Automatic Reporting**: Results integrated into existing graphs
 
-## 📋 Requirements
+## 🎯 Key Benefits
 
-- **Node.js**: 16.0.0 or higher
-- **NVM**: For multi-version testing
-- **Git**: For version control and workflows
+- **Real-World Testing**: Tests AsyncLocalStorage under production-like conditions
+- **Scalability Insights**: Understand performance across different execution models
+- **Error Detection**: Identify context isolation issues early
+- **Performance Optimization**: Find bottlenecks in distributed scenarios
+- **Comprehensive Coverage**: Test edge cases that traditional benchmarks miss
 
-## 🛣 Roadmap
+## 📊 Result Integration
 
-- [ ] Platform-specific testing (Windows, macOS, Linux)
-- [ ] Container-based testing environments
-- [ ] Integration with popular frameworks (Express, Fastify, etc.)
-- [ ] Real-world application benchmarks
-- [ ] Performance regression alerting
-- [ ] Comparative analysis with alternatives
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## 🙋‍♂️ Support
-
-- **Issues**: Report bugs or request features via GitHub Issues
-- **Discussions**: Ask questions in GitHub Discussions
-- **Documentation**: Check the generated docs site for detailed results
+All results are automatically:
+- Saved in the `results/` directory
+- Processed by the report generator
+- Included in performance summaries
+- Added to version comparison charts
+- Available in the documentation
 
 ---
 
-**Made with ❤️ for the Node.js community**
+## Original Features
 
-*Helping developers make informed decisions about AsyncLocalStorage usage.*
+The suite also includes traditional AsyncLocalStorage benchmarks:
+
+- **Baseline Performance**: Operations without AsyncLocalStorage
+- **ALS Overhead**: The same operations wrapped in AsyncLocalStorage.run()
+- **Nested Contexts**: Multiple levels of AsyncLocalStorage nesting
+- **Data Size Impact**: How object size affects performance
+- **Async Operation Impact**: Performance with real async operations
+- **Memory Leak Detection**: Comprehensive memory analysis
+- **Version Comparison**: Performance across Node.js versions
+
+## Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Run traditional benchmark
+npm run benchmark
+
+# Run distributed benchmark
+npm run benchmark-distributed
+
+# Generate reports
+npm run generate-report
+
+# Serve documentation
+npm run serve-docs
+```
+
+## Documentation
+
+- [Performance Summary](docs/SUMMARY.md) - Latest benchmark results
+- [Detailed Results](docs/detailed-results.json) - Raw benchmark data
+- [Version Comparison](docs/version-comparison.json) - Cross-version analysis
+- [Chart Data](docs/chart-data.json) - Visualization data

@@ -45,7 +45,20 @@ jobs:
       run: |
         echo "Node.js version: $(node --version)"
         echo "npm version: $(npm --version)"
+        # Run the original benchmark for baseline comparison
         npm run benchmark
+        
+    - name: Run distributed benchmark tests
+      run: |
+        echo "Running comprehensive distributed benchmark tests..."
+        # Run the new distributed benchmark with enhanced ALS testing
+        npm run benchmark-distributed
+        
+    - name: Run comprehensive benchmark matrix
+      run: |
+        echo "Running full benchmark matrix with all execution modes..."
+        # Run the full test matrix for comprehensive analysis
+        npm run benchmark-full
     
     - name: Run memory profiling tests
       if: ${{ github.event.inputs.run_memory_tests != 'false' }}
