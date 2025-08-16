@@ -86,7 +86,7 @@ jobs:
         echo "📊 Preparing benchmark data for site build..."
         
         # Create results directory structure
-        mkdir -p results/versions
+        mkdir -p results/versions public
         
         # Process version comparison artifact first (this should contain all the consolidated data)
         if [ -d "./downloaded-comparison" ]; then
@@ -101,6 +101,12 @@ jobs:
           if [ -d "./downloaded-comparison/docs" ]; then
             echo "Copying comparison docs..."
             cp -r ./downloaded-comparison/docs/* docs/ 2>/dev/null || true
+          fi
+          
+          # Copy any public files (like data-index.json, version-comparison.json)
+          if [ -d "./downloaded-comparison/public" ]; then
+            echo "Copying public files..."
+            cp -r ./downloaded-comparison/public/* public/ 2>/dev/null || true
           fi
         fi
         
@@ -138,11 +144,101 @@ jobs:
           fi
         fi
         
+        # Debug: Show the structure we have
+        echo "🔍 Current data structure:"
+        if [ -d "results/versions" ]; then
+          echo "Results structure:"
+          find results/versions -type f -name "*.json" | head -20 || echo "No JSON files found"
+          
+          # Show a sample version directory structure
+          sample_version=$(ls results/versions | head -1)
+          if [ -n "$sample_version" ]; then
+            echo "Sample version directory ($sample_version):"
+            ls -la "results/versions/$sample_version" || echo "Cannot list sample directory"
+          fi
+        fi
+        
+        # Generate data index for React app
+        echo "🔧 Generating data index for React app..."
+        if [ -d "results/versions" ] && [ "$(ls -A results/versions 2>/dev/null)" ]; then
+          # Create a data index that maps versions to their latest iteration files
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            
+            const resultsDir = 'results/versions';
+            const versions = {};
+            
+            try {
+              const versionDirs = fs.readdirSync(resultsDir);
+              
+              for (const versionDir of versionDirs) {
+                if (!versionDir.startsWith('node_')) continue;
+                
+                const version = versionDir.replace('node_', '');
+                const versionPath = path.join(resultsDir, versionDir);
+                
+                // Look for the latest iteration files or fallback to root files
+                let benchmarkFile = null;
+                let memoryFile = null;
+                
+                // Check for iteration directories first
+                const files = fs.readdirSync(versionPath);
+                const iterations = files.filter(f => f.startsWith('iteration_')).sort().reverse();
+                
+                if (iterations.length > 0) {
+                  // Use the latest iteration
+                  const latestIteration = iterations[0];
+                  const iterationPath = path.join(versionPath, latestIteration);
+                  const iterationFiles = fs.readdirSync(iterationPath);
+                  
+                  benchmarkFile = iterationFiles.find(f => f.startsWith('benchmark_') && f.endsWith('.json'));
+                  memoryFile = iterationFiles.find(f => f.startsWith('memory_') && f.endsWith('.json'));
+                  
+                  if (benchmarkFile) benchmarkFile = latestIteration + '/' + benchmarkFile;
+                  if (memoryFile) memoryFile = latestIteration + '/' + memoryFile;
+                } else {
+                  // Fallback to root files
+                  benchmarkFile = files.find(f => f.startsWith('benchmark_') && f.endsWith('.json'));
+                  memoryFile = files.find(f => f.startsWith('memory_') && f.endsWith('.json'));
+                }
+                
+                if (benchmarkFile && memoryFile) {
+                  versions[version] = {
+                    benchmark: benchmarkFile,
+                    memory: memoryFile
+                  };
+                }
+              }
+              
+              const dataIndex = {
+                versions: versions,
+                lastUpdated: new Date().toISOString()
+              };
+              
+              fs.writeFileSync('public/data-index.json', JSON.stringify(dataIndex, null, 2));
+              console.log('✅ Generated data-index.json with', Object.keys(versions).length, 'versions');
+            } catch (error) {
+              console.error('❌ Failed to generate data index:', error.message);
+            }
+          "
+        fi
+        
         # Generate reports from the available data
         if [ -d "results/versions" ] && [ "$(ls -A results/versions 2>/dev/null)" ]; then
           echo "Found benchmark data, generating reports..."
+          
+          # Update the results path for version-comparison.js to look in the right place
           npm run compare-versions || echo "Version comparison failed, continuing with build"
           npm run generate-report || echo "Report generation failed, continuing with build"
+          
+          # Copy generated files to public directory for React app
+          if [ -f "docs/version-comparison.json" ]; then
+            cp docs/version-comparison.json public/ || echo "Failed to copy version-comparison.json"
+          fi
+          if [ -f "docs/chart-data.json" ]; then
+            cp docs/chart-data.json public/ || echo "Failed to copy chart-data.json"
+          fi
         else
           echo "No benchmark data found, using existing data if available..."
         fi
@@ -153,9 +249,12 @@ jobs:
         fi
         
         # List what we have for debugging
-        echo "Final results directory contents:"
+        echo "📋 Final directory contents:"
+        echo "Results directory:"
         ls -la results/ || echo "No results directory"
-        echo "Final docs directory contents:"
+        echo "Public directory:"
+        ls -la public/ || echo "No public directory"
+        echo "Docs directory:"
         ls -la docs/ || echo "No docs directory"
 
     - name: Build React application
@@ -171,7 +270,7 @@ jobs:
         echo "📁 Build output contents:"
         ls -la dist/
         
-        # Copy any additional data files to dist (only if they exist)
+        # Copy benchmark results to dist for the React app
         if [ -d "results" ] && [ "$(ls -A results 2>/dev/null)" ]; then
           echo "📊 Copying benchmark results to build output..."
           cp -r results dist/ 2>/dev/null || echo "Failed to copy results, continuing..."
@@ -179,6 +278,7 @@ jobs:
           echo "No results directory or it's empty, skipping..."
         fi
         
+        # Copy documentation files to dist
         if [ -d "docs" ] && [ "$(ls -A docs 2>/dev/null)" ]; then
           echo "📚 Copying documentation to build output..."
           cp -r docs dist/ 2>/dev/null || echo "Failed to copy docs, continuing..."
@@ -186,11 +286,40 @@ jobs:
           echo "No docs directory or it's empty, skipping..."
         fi
         
+        # Copy public files (data-index.json, version-comparison.json, etc.) to dist root
         if [ -d "public" ] && [ "$(ls -A public 2>/dev/null)" ]; then
           echo "🌐 Copying public files to build output..."
-          cp -r public/* dist/ 2>/dev/null || echo "Failed to copy public files, continuing..."
+          # Copy files to dist root, not to a public subdirectory
+          for file in public/*; do
+            if [ -f "$file" ]; then
+              cp "$file" dist/ 2>/dev/null || echo "Failed to copy $(basename "$file"), continuing..."
+            fi
+          done
         else
           echo "No public directory or it's empty, skipping..."
+        fi
+        
+        # Ensure critical data files are available for the React app
+        echo "🔍 Checking for critical data files in dist:"
+        if [ -f "dist/data-index.json" ]; then
+          echo "✅ data-index.json found"
+          head -5 dist/data-index.json || echo "Cannot preview data-index.json"
+        else
+          echo "❌ data-index.json missing"
+        fi
+        
+        if [ -f "dist/version-comparison.json" ]; then
+          echo "✅ version-comparison.json found"
+        else
+          echo "❌ version-comparison.json missing"
+        fi
+        
+        if [ -d "dist/results/versions" ]; then
+          echo "✅ results/versions directory found"
+          echo "Available versions:"
+          ls dist/results/versions/ | head -5 || echo "Cannot list versions"
+        else
+          echo "❌ results/versions directory missing"
         fi
         
         echo "🎯 Final build output:"

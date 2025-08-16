@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 class ReportGenerator {
   constructor() {
-    this.resultsDir = path.join(process.cwd(), 'public', 'results');
+    this.resultsDir = path.join(process.cwd(), 'results');
     this.outputDir = path.join(process.cwd(), 'docs');
   }
 
