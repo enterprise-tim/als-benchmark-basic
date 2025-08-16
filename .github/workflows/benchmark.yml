@@ -282,13 +282,9 @@ jobs:
               ls -la "$artifact_dir"
               
               # Copy all contents from artifact to target directory
-              if [ -d "$artifact_dir/public/results/versions/node_$version_name" ]; then
-                # Artifact has full path structure
-                echo "📂 Copying from full path structure..."
-                cp -r "$artifact_dir/public/results/versions/node_$version_name"/* "$target_dir/" 2>/dev/null || true
-              elif [ -d "$artifact_dir" ] && [ "$(ls -A "$artifact_dir")" ]; then
-                # Artifact has direct contents
-                echo "📂 Copying direct contents..."
+              # The artifact contains the direct contents of the version directory
+              if [ -d "$artifact_dir" ] && [ "$(ls -A "$artifact_dir")" ]; then
+                echo "📂 Copying direct contents from artifact..."
                 cp -r "$artifact_dir"/* "$target_dir/" 2>/dev/null || true
               fi
               
@@ -324,12 +320,27 @@ jobs:
     - name: Generate version comparison report
       run: |
         echo "🔍 Generating comprehensive version comparison report..."
+        
+        # Debug: Check what's in the results directory
+        echo "📁 Current working directory: $(pwd)"
+        echo "📁 Contents of public/results/versions/:"
+        ls -la public/results/versions/ || echo "Directory not found"
+        
+        echo "📁 Contents of results/versions/ (if exists):"
+        ls -la results/versions/ 2>/dev/null || echo "Directory not found"
+        
         # Note: We generate docs here for workflow validation, but don't include them in the release
+        echo "🚀 Running: npm run compare-versions"
+        echo "📁 Available scripts:"
+        npm run
+        
         if npm run compare-versions; then
           echo "📊 Comparison report generated successfully"
+          echo "📁 Generated files in docs/:"
           ls -la docs/
         else
           echo "⚠️ Version comparison failed, but continuing..."
+          echo "📋 npm run compare-versions failed with exit code $?"
           # Create a basic placeholder report
           mkdir -p docs
           echo "# AsyncLocalStorage Benchmark Results" > docs/index.md
