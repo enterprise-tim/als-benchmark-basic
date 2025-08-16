@@ -94,6 +94,7 @@ const VersionAnalysis = () => {
             status: "stable",
             testDate: v.testDate,
             benchmarkCount: v.benchmarkCount,
+            iterations: v.iterations || 1,
             benchmarks: v.benchmarks
           })),
           summary: {
@@ -542,7 +543,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                       Versions Tested
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Across {versionData.versions[0]?.benchmarkCount || 0} benchmarks each
+                      {versionData.versions[0]?.benchmarkCount || 0} benchmarks × {versionData.versions[0]?.iterations || 1} iterations each
                     </Typography>
                   </Box>
                 </Grid>
@@ -582,6 +583,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                               <TableCell align="right"><strong>Basic ALS Overhead</strong></TableCell>
                               <TableCell align="right"><strong>Nested ALS Overhead</strong></TableCell>
                               <TableCell align="right"><strong>Memory Usage</strong></TableCell>
+                              <TableCell align="center"><strong>Iterations</strong></TableCell>
                               <TableCell align="center"><strong>Test Date</strong></TableCell>
                             </TableRow>
                           </TableHead>
@@ -652,11 +654,19 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                                 </Typography>
                               </TableCell>
                               <TableCell align="center">
+                                <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2' }}>
+                                  {version.iterations || 1}
+                                </Typography>
+                                <Typography variant="caption" display="block" color="text.secondary">
+                                  test runs
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="center">
                                 <Typography variant="caption">
                                   {new Date(version.testDate).toLocaleDateString()}
                                 </Typography>
                                 <Typography variant="caption" display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                                  #{version.benchmarkCount} iterations
+                                  {version.benchmarkCount} benchmarks
                                 </Typography>
                               </TableCell>
                             </TableRow>
@@ -751,7 +761,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                         🔍 Detailed Benchmark Breakdown
                       </Typography>
                       <Typography variant="body2" paragraph sx={{ mb: 3 }}>
-                        Each version was tested with {versionData.versions[0]?.benchmarkCount || 0} different scenarios to measure AsyncLocalStorage performance:
+                        Each version was tested with {versionData.versions[0]?.benchmarkCount || 0} different scenarios, each run {versionData.versions[0]?.iterations || 1} times to measure AsyncLocalStorage performance:
                       </Typography>
                       
                       {/* Benchmark Test Explanation */}
@@ -795,7 +805,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                       {versionData.versions.map((version, versionIndex) => (
                         <Box key={versionIndex} sx={{ mb: 3 }}>
                           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#f57c00', mb: 2 }}>
-                            Node.js v{version.version} - {version.benchmarkCount} Tests
+                            Node.js v{version.version} - {version.benchmarkCount} Tests × {version.iterations || 1} Iterations
                           </Typography>
                           <Grid container spacing={2}>
                             {version.benchmarks?.map((benchmark, benchIndex) => (

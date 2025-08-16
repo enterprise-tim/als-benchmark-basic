@@ -87,6 +87,9 @@ jobs:
       - name: Prepare benchmark data
         run: |
           echo "📊 Preparing benchmark data for site build..."
+          echo "Current working directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
           
           # Create results directory structure if it doesn't exist
           mkdir -p results/versions docs
@@ -96,6 +99,29 @@ jobs:
             echo "Found benchmark data from releases, generating reports..."
             npm run compare-versions || echo "Version comparison failed, continuing with build"
             npm run generate-report || echo "Report generation failed, continuing with build"
+            
+            # Verify that the files were actually generated
+            echo "🔍 Verifying generated files..."
+            if [ -f "docs/version-comparison.json" ]; then
+              echo "✅ version-comparison.json exists"
+              echo "File size: $(ls -lh docs/version-comparison.json | awk '{print $5}')"
+            else
+              echo "❌ version-comparison.json not found"
+            fi
+            
+            if [ -f "docs/chart-data.json" ]; then
+              echo "✅ chart-data.json exists"
+              echo "File size: $(ls -lh docs/chart-data.json | awk '{print $5}')"
+            else
+              echo "❌ chart-data.json not found"
+            fi
+            
+            if [ -f "docs/detailed-results.json" ]; then
+              echo "✅ detailed-results.json exists"
+              echo "File size: $(ls -lh docs/detailed-results.json | awk '{print $5}')"
+            else
+              echo "❌ detailed-results.json not found"
+            fi
           else
             echo "No benchmark data found, creating minimal directory structure..."
             # Create empty directories to prevent build failures, but don't create placeholder data
@@ -119,11 +145,44 @@ jobs:
           if [ -d "results" ] && [ "$(ls -A results 2>/dev/null)" ]; then
             echo "📊 Copying benchmark results to build output..."
             cp -r results dist/ 2>/dev/null || echo "Failed to copy results, continuing..."
+            
+            # Generate data-index.json for the benchmarkData service
+            echo "📋 Generating data-index.json for benchmark data service..."
+            if [ -d "results/versions" ]; then
+              # Create a simple data index mapping versions to their files
+              echo "{" > dist/data-index.json
+              first=true
+              for versionDir in results/versions/node_*; do
+                if [ -d "$versionDir" ]; then
+                  version=$(basename "$versionDir" | sed 's/node_//')
+                  benchmarkFile=$(find "$versionDir" -name "benchmark_*.json" | head -1 | xargs basename 2>/dev/null || echo "")
+                  memoryFile=$(find "$versionDir" -name "memory_*.json" | head -1 | xargs basename 2>/dev/null || echo "")
+                  
+                  if [ "$first" = true ]; then
+                    first=false
+                  else
+                    echo "," >> dist/data-index.json
+                  fi
+                  
+                  echo "  \"$version\": {" >> dist/data-index.json
+                  echo "    \"benchmark\": \"$benchmarkFile\"," >> dist/data-index.json
+                  echo "    \"memory\": \"$memoryFile\"" >> dist/data-index.json
+                  echo "  }" >> dist/data-index.json
+                fi
+              done
+              echo "}" >> dist/data-index.json
+              echo "✅ data-index.json generated successfully"
+            fi
           fi
           
           if [ -d "docs" ] && [ "$(ls -A docs 2>/dev/null)" ]; then
             echo "📚 Copying documentation to build output..."
             cp -r docs dist/ 2>/dev/null || echo "Failed to copy docs, continuing..."
+            
+            # Copy generated JSON files to root of build output for website access
+            echo "📊 Copying generated JSON files to build root..."
+            cp docs/*.json dist/ 2>/dev/null || echo "Failed to copy JSON files, continuing..."
+            echo "✅ Generated JSON files copied to build root"
           fi
           
           # Copy only specific static files from public, excluding generated data
