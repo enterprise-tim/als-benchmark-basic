@@ -337,37 +337,46 @@ jobs:
         # Create a summary file
         NODE_VERSIONS_LIST=$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /')
         
-        cat > release-package/README.md << EOF
+        cat > release-package/README.md << 'EOF'
 # AsyncLocalStorage Benchmark Results
 
 Generated on: $(date -u)
 
 ## Contents
-- \`results/\` - Raw benchmark data for each Node.js version
-- \`docs/\` - Generated reports and analysis
+- `results/` - Raw benchmark data for each Node.js version
+- `docs/` - Generated reports and analysis
 
 ## Usage
 Download this release and extract the contents to use with the async-node-stats application.
 
 ## Node.js Versions Tested
-$NODE_VERSIONS_LIST
 EOF
+        
+        # Append the dynamic content
+        echo "$NODE_VERSIONS_LIST" >> release-package/README.md
         
         # Create a JSON manifest
         NODE_VERSIONS=$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//')
         TOTAL_SIZE=$(du -sh release-package | cut -f1)
+        GENERATED_AT=$(date -u -Iseconds)
         
-        cat > release-package/manifest.json << EOF
+        cat > release-package/manifest.json << 'EOF'
 {
   "releaseType": "benchmark-results",
-  "generatedAt": "$(date -u -Iseconds)",
+  "generatedAt": "GENERATED_AT_PLACEHOLDER",
   "nodeVersions": [
-$NODE_VERSIONS
+NODE_VERSIONS_PLACEHOLDER
   ],
-  "totalSize": "$TOTAL_SIZE",
-  "workflowRun": "${{ github.run_id }}"
+  "totalSize": "TOTAL_SIZE_PLACEHOLDER",
+  "workflowRun": "WORKFLOW_RUN_PLACEHOLDER"
 }
 EOF
+        
+        # Replace placeholders with actual values
+        sed -i "s/GENERATED_AT_PLACEHOLDER/$GENERATED_AT/g" release-package/manifest.json
+        sed -i "s/NODE_VERSIONS_PLACEHOLDER/$NODE_VERSIONS/g" release-package/manifest.json
+        sed -i "s/TOTAL_SIZE_PLACEHOLDER/$TOTAL_SIZE/g" release-package/manifest.json
+        sed -i "s/WORKFLOW_RUN_PLACEHOLDER/${{ github.run_id }}/g" release-package/manifest.json
         
         # Create a compressed archive
         tar -czf "async-node-stats-benchmark-${TIMESTAMP}.tar.gz" -C release-package .
