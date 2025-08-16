@@ -3,8 +3,17 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Generated data and results
 results/
 output/
+docs/*.json
+docs/*.html
+public/results/
+public/*.json
+enterprise-dashboard/*.json
+*.tar.gz
+benchmark-results.tar.gz
 
 # Production build
 dist/
