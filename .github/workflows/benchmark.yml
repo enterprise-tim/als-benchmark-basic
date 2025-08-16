@@ -318,14 +318,14 @@ jobs:
       run: |
         echo "📦 Preparing release assets..."
         
-        # Create a timestamp for the release
+        # Create timestamp
         TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
         RELEASE_TAG="benchmark-results-${TIMESTAMP}"
         
         # Create release directory
         mkdir -p release-package
         
-        # Copy benchmark results and docs
+        # Copy results and docs
         if [ -d "./release-assets/results" ]; then
           cp -r ./release-assets/results release-package/
         fi
@@ -334,61 +334,28 @@ jobs:
           cp -r ./release-assets/docs release-package/
         fi
         
-        # Create a summary file
-        NODE_VERSIONS_LIST=$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /')
+        # Create simple README
+        echo "# AsyncLocalStorage Benchmark Results" > release-package/README.md
+        echo "" >> release-package/README.md
+        echo "Generated on: $(date -u)" >> release-package/README.md
+        echo "" >> release-package/README.md
+        echo "## Contents" >> release-package/README.md
+        echo "- results/ - Raw benchmark data" >> release-package/README.md
+        echo "- docs/ - Generated reports" >> release-package/README.md
         
-        cat > release-package/README.md << 'EOF'
-# AsyncLocalStorage Benchmark Results
-
-Generated on: $(date -u)
-
-## Contents
-- `results/` - Raw benchmark data for each Node.js version
-- `docs/` - Generated reports and analysis
-
-## Usage
-Download this release and extract the contents to use with the async-node-stats application.
-
-## Node.js Versions Tested
-EOF
+        # Create simple manifest
+        echo "{" > release-package/manifest.json
+        echo '  "releaseType": "benchmark-results",' >> release-package/manifest.json
+        echo "  \"generatedAt\": \"$(date -u -Iseconds)\"," >> release-package/manifest.json
+        echo '  "workflowRun": "'${{ github.run_id }}'"' >> release-package/manifest.json
+        echo "}" >> release-package/manifest.json
         
-        # Append the dynamic content
-        echo "$NODE_VERSIONS_LIST" >> release-package/README.md
+        # Create archive
+        tar -czf "benchmark-results.tar.gz" -C release-package .
         
-        # Create a JSON manifest
-        NODE_VERSIONS=$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//')
-        TOTAL_SIZE=$(du -sh release-package | cut -f1)
-        GENERATED_AT=$(date -u -Iseconds)
-        
-        cat > release-package/manifest.json << 'EOF'
-{
-  "releaseType": "benchmark-results",
-  "generatedAt": "GENERATED_AT_PLACEHOLDER",
-  "nodeVersions": [
-NODE_VERSIONS_PLACEHOLDER
-  ],
-  "totalSize": "TOTAL_SIZE_PLACEHOLDER",
-  "workflowRun": "WORKFLOW_RUN_PLACEHOLDER"
-}
-EOF
-        
-        # Replace placeholders with actual values
-        sed -i "s/GENERATED_AT_PLACEHOLDER/$GENERATED_AT/g" release-package/manifest.json
-        sed -i "s/NODE_VERSIONS_PLACEHOLDER/$NODE_VERSIONS/g" release-package/manifest.json
-        sed -i "s/TOTAL_SIZE_PLACEHOLDER/$TOTAL_SIZE/g" release-package/manifest.json
-        sed -i "s/WORKFLOW_RUN_PLACEHOLDER/${{ github.run_id }}/g" release-package/manifest.json
-        
-        # Create a compressed archive
-        tar -czf "async-node-stats-benchmark-${TIMESTAMP}.tar.gz" -C release-package .
-        
-        echo "Release tag: $RELEASE_TAG"
-        echo "Release assets prepared:"
-        ls -la release-package/
-        echo "Archive created: async-node-stats-benchmark-${TIMESTAMP}.tar.gz"
-        
-        # Set outputs for the next step
+        # Set outputs
         echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
-        echo "archive_name=async-node-stats-benchmark-${TIMESTAMP}.tar.gz" >> $GITHUB_OUTPUT
+        echo "archive_name=benchmark-results.tar.gz" >> $GITHUB_OUTPUT
         echo "generated_at=$(date -u -Iseconds)" >> $GITHUB_OUTPUT
     
     - name: Create Release
@@ -402,62 +369,23 @@ EOF
         body: |
           ## AsyncLocalStorage Benchmark Results
           
-          This release contains the latest benchmark results for AsyncLocalStorage performance across different Node.js versions.
+          This release contains benchmark results for AsyncLocalStorage performance.
           
-          ### What's Included
-          - Raw benchmark data for each tested Node.js version
-          - Generated performance reports and analysis
-          - Memory profiling results
-          - Version comparison charts and tables
+          Generated on: ${{ steps.prepare_release.outputs.generated_at }}
           
-          ### Generated On
-          ${{ steps.prepare_release.outputs.generated_at }}
-          
-          ### Workflow Run
-          [${{ github.workflow }} #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          
-          ### Usage
-          Download the `async-node-stats-benchmark-*.tar.gz` file and extract it to use with the async-node-stats application.
-          
-          The deploy workflow will automatically download and use the latest release for building the site.
+          Workflow run: ${{ github.run_id }}
         draft: false
         prerelease: false
     
-    - name: Upload Release Assets
+    - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./${{ steps.prepare_release.outputs.archive_name }}
-        asset_name: ${{ steps.prepare_release.outputs.archive_name }}
+        asset_path: ./benchmark-results.tar.gz
+        asset_name: benchmark-results.tar.gz
         asset_content_type: application/gzip
-    
-    - name: Upload Release Assets - Individual Files
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release-package/manifest.json
-        asset_name: manifest.json
-        asset_content_type: application/json
-    
-    - name: Upload Release Assets - Results Directory
-      run: |
-        cd release-package
-        zip -r ../results.zip results/
-        cd ..
-      
-    - name: Upload Release Assets - Results Zip
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./results.zip
-        asset_name: results.zip
-        asset_content_type: application/zip
 
   performance-regression:
     runs-on: ubuntu-latest-4-cores
