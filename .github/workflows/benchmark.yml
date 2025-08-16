@@ -365,6 +365,7 @@ jobs:
         name: version-comparison
         path: |
           public/results/
+          docs/
         retention-days: 30
 
   create-release:
@@ -443,6 +444,20 @@ jobs:
           find ./release-assets -maxdepth 1 -name "*.json" | head -5
           find ./release-assets -maxdepth 1 -name "*.json" -exec cp {} release-package/results/ \; 2>/dev/null || true
           
+          # Copy analysis files from docs directory if they exist
+          if [ -d "./release-assets/docs" ]; then
+            echo "📊 Found docs directory in release assets, copying analysis files:"
+            ls -la ./release-assets/docs/
+            
+            # Copy key analysis files
+            for file in "version-comparison.json" "detailed-results.json" "chart-data.json" "version-comparison.html" "index.html"; do
+              if [ -f "./release-assets/docs/$file" ]; then
+                echo "📋 Copying docs/$file to release"
+                cp "./release-assets/docs/$file" "release-package/results/"
+              fi
+            done
+          fi
+          
           # Copy important comparison and analysis files from docs directory if they exist
           if [ -d "docs" ]; then
             echo "📊 Looking for analysis files in docs directory:"
@@ -450,6 +465,14 @@ jobs:
             
             # Copy key analysis files
             for file in "version-comparison.json" "detailed-results.json" "chart-data.json"; do
+              if [ -f "docs/$file" ]; then
+                echo "📋 Copying docs/$file to release"
+                cp "docs/$file" "release-package/results/"
+              fi
+            done
+            
+            # Also copy HTML files for completeness
+            for file in "version-comparison.html" "index.html"; do
               if [ -f "docs/$file" ]; then
                 echo "📋 Copying docs/$file to release"
                 cp "docs/$file" "release-package/results/"
@@ -523,6 +546,7 @@ jobs:
           echo "- results/version-comparison.json - Cross-version performance comparison"
           echo "- results/detailed-results.json - Detailed analysis and statistics"
           echo "- results/chart-data.json - Data formatted for visualization"
+          echo "- results/version-comparison.html - HTML version of the comparison report"
           echo ""
           echo "## Usage"
           echo "Download this release and extract the contents to use with the async-node-stats application."
@@ -533,7 +557,7 @@ jobs:
           echo ""
           echo "## Analysis Files"
           echo "The following analysis files are included if available:"
-          for file in version-comparison.json detailed-results.json chart-data.json; do
+          for file in version-comparison.json detailed-results.json chart-data.json version-comparison.html; do
             if [ -f "release-package/results/$file" ]; then
               echo "- ✅ $file"
             else
@@ -545,6 +569,15 @@ jobs:
         # Create a JSON manifest
         NODE_VERSIONS=$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//' || echo '    "none"')
         TOTAL_SIZE=$(du -sh release-package | cut -f1)
+        
+        # Check which analysis files are available
+        ANALYSIS_FILES=()
+        for file in "version-comparison.json" "detailed-results.json" "chart-data.json" "version-comparison.html"; do
+          if [ -f "release-package/results/$file" ]; then
+            ANALYSIS_FILES+=("\"$file\"")
+          fi
+        done
+        
         {
           echo "{"
           echo "  \"releaseType\": \"benchmark-results\","
@@ -555,7 +588,10 @@ jobs:
           echo "  \"totalSize\": \"$TOTAL_SIZE\","
           echo "  \"workflowRun\": \"${{ github.run_id }}\","
           echo "  \"dataFiles\": $TOTAL_FILES,"
-          echo "  \"note\": \"This release contains only raw benchmark data. Documentation is generated during site build.\""
+          echo "  \"analysisFiles\": ["
+          echo "    $(IFS=,; echo "${ANALYSIS_FILES[*]}")"
+          echo "  ],"
+          echo "  \"note\": \"This release contains raw benchmark data and analysis files. HTML documentation is generated during site build.\""
           echo "}"
         } > release-package/manifest.json
         
