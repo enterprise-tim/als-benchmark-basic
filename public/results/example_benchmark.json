@@ -1,0 +1,96 @@
+{
+  "nodeVersion": "v22.17.1",
+  "platform": "darwin",
+  "arch": "arm64",
+  "timestamp": "2024-08-15T18:00:00.000Z",
+  "benchmarks": [
+    {
+      "name": "Small Data",
+      "config": {
+        "iterations": 10000,
+        "dataSize": 5,
+        "asyncOps": false
+      },
+      "withoutALS": {
+        "duration": 1663.01,
+        "memoryDelta": {
+          "rss": 1048576,
+          "heapUsed": 524288,
+          "heapTotal": 2097152,
+          "external": 0
+        },
+        "results": 10000
+      },
+      "withALS": {
+        "duration": 1697.90,
+        "memoryDelta": {
+          "rss": 2473984,
+          "heapUsed": 786432,
+          "heapTotal": 2621440,
+          "external": 0
+        },
+        "results": 10000
+      },
+      "nestedALS": {
+        "duration": 7797.51,
+        "memoryDelta": {
+          "rss": 5242880,
+          "heapUsed": 1572864,
+          "heapTotal": 4194304,
+          "external": 0
+        },
+        "results": 2000
+      },
+      "overhead": {
+        "timePercent": 2.10,
+        "nestedTimePercent": 368.88,
+        "memoryRSSBytes": 1425408,
+        "memoryHeapBytes": 262144
+      }
+    },
+    {
+      "name": "Medium Data",
+      "config": {
+        "iterations": 5000,
+        "dataSize": 50,
+        "asyncOps": false
+      },
+      "withoutALS": {
+        "duration": 1245.67,
+        "memoryDelta": {
+          "rss": 10485760,
+          "heapUsed": 5242880,
+          "heapTotal": 8388608,
+          "external": 0
+        },
+        "results": 5000
+      },
+      "withALS": {
+        "duration": 1289.34,
+        "memoryDelta": {
+          "rss": 11534336,
+          "heapUsed": 5767168,
+          "heapTotal": 8912896,
+          "external": 0
+        },
+        "results": 5000
+      },
+      "nestedALS": {
+        "duration": 3456.78,
+        "memoryDelta": {
+          "rss": 15728640,
+          "heapUsed": 7340032,
+          "heapTotal": 12582912,
+          "external": 0
+        },
+        "results": 1000
+      },
+      "overhead": {
+        "timePercent": 3.51,
+        "nestedTimePercent": 177.59,
+        "memoryRSSBytes": 1048576,
+        "memoryHeapBytes": 524288
+      }
+    }
+  ]
+}

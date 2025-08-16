@@ -4,9 +4,12 @@
   "description": "Performance benchmarks for AsyncLocalStorage overhead analysis across Node.js versions",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build && mkdir -p dist/results && cp -r results/* dist/results/ 2>/dev/null || true && cp -r public/* dist/ 2>/dev/null || true",
-    "preview": "vite preview",
+    "dev": "./copy-results-for-dev.sh && vite",
+    "dev-cleanup": "vite && ./cleanup-dev-results.sh",
+    "dev-stop": "./cleanup-dev-results.sh",
+    "build": "vite build && mkdir -p dist/results && cp -r results/* dist/results/ 2>/dev/null || true && cp -r public/* dist/ 2>/dev/null || true && ./cleanup-dev-results.sh",
+    "preview": "./copy-results-for-dev.sh && vite preview",
+    "preview-cleanup": "vite preview && ./cleanup-dev-results.sh",
     "deploy": "gh-pages -d dist",
     "start": "node src/index.js",
     "benchmark": "node --max-old-space-size=8192 --expose-gc src/benchmark.js",
@@ -23,7 +26,9 @@
     "serve-docs": "npx http-server docs -p 8080",
     "validate-versions": "node scripts/validate-versions.js",
     "get-versions": "node scripts/get-node-versions.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "copy-results": "./copy-results-for-dev.sh",
+    "cleanup-results": "./cleanup-dev-results.sh"
   },
   "dependencies": {
     "@emotion/react": "^11.11.0",

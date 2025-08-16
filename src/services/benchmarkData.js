@@ -23,7 +23,19 @@ async function loadDataIndex() {
     const basePath = getBasePath();
     
     console.log('Loading data index from:', `${basePath}/data-index.json`);
-    const response = await fetch(`${basePath}/data-index.json`);
+    let response = await fetch(`${basePath}/data-index.json`);
+    
+    // If that fails, try without basePath
+    if (!response.ok) {
+      console.log('Trying data-index.json without basePath: /data-index.json');
+      response = await fetch('/data-index.json');
+    }
+    
+    // If that fails, try with relative path
+    if (!response.ok) {
+      console.log('Trying data-index.json with relative path: ./data-index.json');
+      response = await fetch('./data-index.json');
+    }
     
     if (!response.ok) {
       throw new Error(`Failed to load data index: ${response.statusText}`);
@@ -103,7 +115,19 @@ async function loadBenchmarkData(version) {
       throw new Error(`No data index found for version ${version}`);
     }
     
-    const response = await fetch(`${basePath}/results/versions/${versionDir}/${versionData.benchmark}`);
+    let response = await fetch(`${basePath}/results/versions/${versionDir}/${versionData.benchmark}`);
+    
+    // If that fails, try without basePath
+    if (!response.ok) {
+      console.log(`Trying benchmark without basePath: /results/versions/${versionDir}/${versionData.benchmark}`);
+      response = await fetch(`/results/versions/${versionDir}/${versionData.benchmark}`);
+    }
+    
+    // If that fails, try with relative path
+    if (!response.ok) {
+      console.log(`Trying benchmark with relative path: ./results/versions/${versionDir}/${versionData.benchmark}`);
+      response = await fetch(`./results/versions/${versionDir}/${versionData.benchmark}`);
+    }
     
     if (!response.ok) {
       throw new Error(`Failed to load benchmark data for ${version}: ${response.statusText}`);
@@ -135,7 +159,19 @@ async function loadMemoryData(version) {
       throw new Error(`No data index found for version ${version}`);
     }
     
-    const response = await fetch(`${basePath}/results/versions/${versionDir}/${versionData.memory}`);
+    let response = await fetch(`${basePath}/results/versions/${versionDir}/${versionData.memory}`);
+    
+    // If that fails, try without basePath
+    if (!response.ok) {
+      console.log(`Trying memory without basePath: /results/versions/${versionDir}/${versionData.memory}`);
+      response = await fetch(`/results/versions/${versionDir}/${versionData.memory}`);
+    }
+    
+    // If that fails, try with relative path
+    if (!response.ok) {
+      console.log(`Trying memory with relative path: ./results/versions/${versionDir}/${versionData.memory}`);
+      response = await fetch(`./results/versions/${versionDir}/${versionData.memory}`);
+    }
     
     if (!response.ok) {
       throw new Error(`Failed to load memory data for ${version}: ${response.statusText}`);
@@ -165,10 +201,24 @@ async function loadBenchmarkDataWithIndex(version) {
     }
     
     const basePath = getBasePath();
-    const url = `${basePath}/results/versions/${versionDir}/${versionData.benchmark}`;
+    let url = `${basePath}/results/versions/${versionDir}/${versionData.benchmark}`;
     console.log(`Loading benchmark data for ${version} from:`, url);
     
-    const response = await fetch(url);
+    let response = await fetch(url);
+    
+    // If that fails, try without basePath
+    if (!response.ok) {
+      url = `/results/versions/${versionDir}/${versionData.benchmark}`;
+      console.log(`Trying benchmark without basePath:`, url);
+      response = await fetch(url);
+    }
+    
+    // If that fails, try with relative path
+    if (!response.ok) {
+      url = `./results/versions/${versionDir}/${versionData.benchmark}`;
+      console.log(`Trying benchmark with relative path:`, url);
+      response = await fetch(url);
+    }
     
     if (!response.ok) {
       throw new Error(`Failed to load benchmark data for ${version}: ${response.statusText}`);
@@ -199,7 +249,19 @@ async function loadMemoryDataWithIndex(version) {
     }
     
     const basePath = getBasePath();
-    const response = await fetch(`${basePath}/results/versions/${versionDir}/${versionData.memory}`);
+    let response = await fetch(`${basePath}/results/versions/${versionDir}/${versionData.memory}`);
+    
+    // If that fails, try without basePath
+    if (!response.ok) {
+      console.log(`Trying memory without basePath: /results/versions/${versionDir}/${versionData.memory}`);
+      response = await fetch(`/results/versions/${versionDir}/${versionData.memory}`);
+    }
+    
+    // If that fails, try with relative path
+    if (!response.ok) {
+      console.log(`Trying memory with relative path: ./results/versions/${versionDir}/${versionData.memory}`);
+      response = await fetch(`./results/versions/${versionDir}/${versionData.memory}`);
+    }
     
     if (!response.ok) {
       throw new Error(`Failed to load memory data for ${version}: ${response.statusText}`);
@@ -386,7 +448,21 @@ async function debugDataLoading(version) {
     // Test if we can access the results directory structure
     console.log('Testing results directory access...');
     try {
-      const resultsTestResponse = await fetch(`${basePath}/results/versions/`);
+      console.log('Trying results directory with basePath:', `${basePath}/results/versions/`);
+      let resultsTestResponse = await fetch(`${basePath}/results/versions/`);
+      
+      // If that fails, try without basePath
+      if (!resultsTestResponse.ok) {
+        console.log('Trying results directory without basePath: /results/versions/');
+        resultsTestResponse = await fetch('/results/versions/');
+      }
+      
+      // If that fails, try with relative path
+      if (!resultsTestResponse.ok) {
+        console.log('Trying results directory with relative path: ./results/versions/');
+        resultsTestResponse = await fetch('./results/versions/');
+      }
+      
       console.log('Results directory test response status:', resultsTestResponse.status);
       console.log('Results directory test response status text:', resultsTestResponse.statusText);
     } catch (error) {
@@ -396,7 +472,21 @@ async function debugDataLoading(version) {
     // Test if we can access the specific version directory
     console.log('Testing version directory access...');
     try {
-      const versionDirTestResponse = await fetch(`${basePath}/results/versions/${versionDir}/`);
+      console.log('Trying version directory with basePath:', `${basePath}/results/versions/${versionDir}/`);
+      let versionDirTestResponse = await fetch(`${basePath}/results/versions/${versionDir}/`);
+      
+      // If that fails, try without basePath
+      if (!versionDirTestResponse.ok) {
+        console.log('Trying version directory without basePath:', `/results/versions/${versionDir}/`);
+        versionDirTestResponse = await fetch(`/results/versions/${versionDir}/`);
+      }
+      
+      // If that fails, try with relative path
+      if (!versionDirTestResponse.ok) {
+        console.log('Trying version directory with relative path:', `./results/versions/${versionDir}/`);
+        versionDirTestResponse = await fetch(`./results/versions/${versionDir}/`);
+      }
+      
       console.log('Version directory test response status:', versionDirTestResponse.status);
       console.log('Version directory test response status text:', versionDirTestResponse.statusText);
     } catch (error) {
@@ -406,7 +496,21 @@ async function debugDataLoading(version) {
     // Test if we can access a known file directly
     console.log('Testing direct file access...');
     try {
-      const directFileTestResponse = await fetch(`${basePath}/results/versions/${versionDir}/memory_v24_6_0_1755352739076.json`);
+      console.log('Trying direct file with basePath:', `${basePath}/results/versions/${versionDir}/memory_v24_6_0_1755352739076.json`);
+      let directFileTestResponse = await fetch(`${basePath}/results/versions/${versionDir}/memory_v24_6_0_1755352739076.json`);
+      
+      // If that fails, try without basePath
+      if (!directFileTestResponse.ok) {
+        console.log('Trying direct file without basePath:', `/results/versions/${versionDir}/memory_v24_6_0_1755352739076.json`);
+        directFileTestResponse = await fetch(`/results/versions/${versionDir}/memory_v24_6_0_1755352739076.json`);
+      }
+      
+      // If that fails, try with relative path
+      if (!directFileTestResponse.ok) {
+        console.log('Trying direct file with relative path:', `./results/versions/${versionDir}/memory_v24_6_0_1755352739076.json`);
+        directFileTestResponse = await fetch(`./results/versions/${versionDir}/memory_v24_6_0_1755352739076.json`);
+      }
+      
       console.log('Direct file test response status:', directFileTestResponse.status);
       console.log('Direct file test response status text:', directFileTestResponse.statusText);
       if (directFileTestResponse.ok) {
