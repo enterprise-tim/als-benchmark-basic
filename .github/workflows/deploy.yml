@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: "pages"
@@ -30,8 +31,70 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Download latest benchmark artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: version-comparison
+          path: ./downloaded-artifacts
+        continue-on-error: true
+        
+      - name: Prepare benchmark data
+        run: |
+          echo "📊 Preparing benchmark data for site build..."
+          
+          # Create results directory structure
+          mkdir -p results/versions
+          
+          # Process downloaded benchmark artifacts
+          if [ -d "./downloaded-artifacts" ] && [ "$(ls -A downloaded-artifacts 2>/dev/null)" ]; then
+            echo "Processing benchmark artifacts..."
+            
+            # Copy the results and docs from the artifacts
+            if [ -d "./downloaded-artifacts/results" ]; then
+              echo "Copying results..."
+              cp -r ./downloaded-artifacts/results/* results/ 2>/dev/null || true
+            fi
+            
+            if [ -d "./downloaded-artifacts/docs" ]; then
+              echo "Copying docs..."
+              cp -r ./downloaded-artifacts/docs/* docs/ 2>/dev/null || true
+            fi
+          else
+            echo "No benchmark artifacts found, using existing data if available..."
+          fi
+          
+          # Generate reports from the available data
+          if [ -d "results/versions" ] && [ "$(ls -A results/versions 2>/dev/null)" ]; then
+            echo "Found benchmark data, generating reports..."
+            npm run compare-versions || echo "Version comparison failed, continuing with build"
+            npm run generate-report || echo "Report generation failed, continuing with build"
+          fi
+        
       - name: Build React app
-        run: npm run build
+        run: |
+          echo "🔨 Building React application..."
+          
+          # Ensure required directories exist before build
+          mkdir -p results docs public
+          
+          # Build the React app
+          npm run build
+          
+          # Copy benchmark results and docs to build output
+          if [ -d "results" ] && [ "$(ls -A results 2>/dev/null)" ]; then
+            echo "📊 Copying benchmark results to build output..."
+            cp -r results dist/ 2>/dev/null || echo "Failed to copy results, continuing..."
+          fi
+          
+          if [ -d "docs" ] && [ "$(ls -A docs 2>/dev/null)" ]; then
+            echo "📚 Copying documentation to build output..."
+            cp -r docs dist/ 2>/dev/null || echo "Failed to copy docs, continuing..."
+          fi
+          
+          if [ -d "public" ] && [ "$(ls -A public 2>/dev/null)" ]; then
+            echo "🌐 Copying public files to build output..."
+            cp -r public/* dist/ 2>/dev/null || echo "Failed to copy public files, continuing..."
+          fi
         
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
