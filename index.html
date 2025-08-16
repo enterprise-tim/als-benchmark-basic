@@ -33,9 +33,17 @@
           var decoded = l.search.slice(1).split('&').map(function(s) { 
             return s.replace(/~and~/g, '&')
           }).join('?');
-          window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
-          );
+          
+          // Prevent infinite redirect loops by checking for malformed URLs
+          if (decoded.indexOf('~and~') === -1) {
+            window.history.replaceState(null, null,
+                l.pathname.slice(0, -1) + decoded + l.hash
+            );
+          } else {
+            // If we still have ~and~ after decoding, something went wrong
+            // Redirect to the base path to break the loop
+            window.history.replaceState(null, null, l.pathname.slice(0, -1) + l.hash);
+          }
         }
       }(window.location))
     </script>
