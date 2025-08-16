@@ -11,7 +11,7 @@ class AllVersionsRunner {
   constructor(iterations = 10) {
     this.iterations = iterations;
     this.configPath = path.join(process.cwd(), 'config', 'node-versions.json');
-    this.resultsDir = path.join(process.cwd(), 'results');
+    this.resultsDir = path.join(process.cwd(), 'public', 'results');
   }
 
   async run() {

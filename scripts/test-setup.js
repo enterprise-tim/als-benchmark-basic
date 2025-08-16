@@ -87,7 +87,7 @@ async function testSetup() {
     
     // Test 5: Check if we can create test results structure
     console.log('\n5️⃣ Testing results directory creation...');
-    const resultsDir = path.join(process.cwd(), 'results', 'test');
+    const resultsDir = path.join(process.cwd(), 'public', 'results', 'test');
     await fs.mkdir(resultsDir, { recursive: true });
     console.log(`✅ Created test results directory: ${resultsDir}`);
     

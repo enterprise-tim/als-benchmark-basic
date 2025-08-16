@@ -116,15 +116,15 @@ jobs:
         echo "📊 Matrix job ${{ strategy.job-index }} of ${{ strategy.job-total }}"
         
         # Ensure results directory exists
-        mkdir -p results/versions/node_${{ matrix.node-version }}
-        echo "📁 Created results directory: results/versions/node_${{ matrix.node-version }}"
+        mkdir -p public/results/versions/node_${{ matrix.node-version }}
+        echo "📁 Created results directory: public/results/versions/node_${{ matrix.node-version }}"
         
         # Run the benchmark
         npm run multi-iteration ${{ github.event.inputs.iterations || 10 }}
         
         # Verify results were created
         echo "📊 Benchmark completed, checking results:"
-        ls -la results/versions/node_${{ matrix.node-version }}/ || echo "No results directory found"
+        ls -la public/results/versions/node_${{ matrix.node-version }}/ || echo "No results directory found"
         
     - name: Run memory profiling tests
       if: ${{ github.event.inputs.run_memory_tests != 'false' }}
@@ -132,18 +132,18 @@ jobs:
         echo "🧠 Running memory tests for Node.js ${{ matrix.node-version }}"
         
         # Ensure results directory exists
-        mkdir -p results/versions/node_${{ matrix.node-version }}
+        mkdir -p public/results/versions/node_${{ matrix.node-version }}
         
         # Run memory test
         node --expose-gc src/memory-test.js
         
         # Copy memory results to version directory
-        if [ -d "results/versions/node_${{ matrix.node-version }}" ]; then
-          mkdir -p "results/versions/node_${{ matrix.node-version }}/memory"
-          find results -name "memory_*.json" -exec cp {} "results/versions/node_${{ matrix.node-version }}/memory/" \;
+        if [ -d "public/results/versions/node_${{ matrix.node-version }}" ]; then
+          mkdir -p "public/results/versions/node_${{ matrix.node-version }}/memory"
+          find public/results -name "memory_*.json" -exec cp {} "public/results/versions/node_${{ matrix.node-version }}/memory/" \;
           
           echo "📊 Memory test results:"
-          ls -la "results/versions/node_${{ matrix.node-version }}/memory/" || echo "No memory results found"
+          ls -la "public/results/versions/node_${{ matrix.node-version }}/memory/" || echo "No memory results found"
         fi
     
     - name: Upload benchmark results
@@ -151,9 +151,9 @@ jobs:
       with:
         name: benchmark-results-node-${{ matrix.node-version }}
         path: |
-          results/versions/node_${{ matrix.node-version }}/
-          results/benchmark_*.json
-          results/memory_*.json
+          public/results/versions/node_${{ matrix.node-version }}/
+          public/results/benchmark_*.json
+          public/results/memory_*.json
         retention-days: 30
     
     - name: Generate performance summary
@@ -161,18 +161,19 @@ jobs:
         echo "## Performance Summary for Node.js ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        VERSION_DIR="results/versions/node_${{ matrix.node-version }}"
+        VERSION_DIR="public/results/versions/node_${{ matrix.node-version }}"
         if [ -d "$VERSION_DIR" ]; then
           echo "### Benchmark Results" >> $GITHUB_STEP_SUMMARY
-          echo "**Iterations completed:** $(find $VERSION_DIR -name "iteration_*" -type d | wc -l)" >> $GITHUB_STEP_SUMMARY
-          echo "**Total duration:** $(find $VERSION_DIR -name "iteration-summary.json" -exec jq -r '.summary.averageDuration // "N/A"' {} \;)" >> $GITHUB_STEP_SUMMARY
+          echo "**Files found:** $(ls -1 $VERSION_DIR | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "**Contents:**" >> $GITHUB_STEP_SUMMARY
+          ls -la "$VERSION_DIR" >> $GITHUB_STEP_SUMMARY
           
-          # Show iteration summary if available
-          if [ -f "$VERSION_DIR/iteration-summary.json" ]; then
+          # Show benchmark log if available
+          if [ -f "$VERSION_DIR/benchmark.log" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Iteration Summary:**" >> $GITHUB_STEP_SUMMARY
-            echo '```json' >> $GITHUB_STEP_SUMMARY
-            jq '.summary' "$VERSION_DIR/iteration-summary.json" >> $GITHUB_STEP_SUMMARY
+            echo "**Benchmark Log (last 10 lines):**" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -10 "$VERSION_DIR/benchmark.log" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
         else
@@ -206,7 +207,7 @@ jobs:
     
     - name: Prepare results directory
       run: |
-        mkdir -p results/versions
+        mkdir -p public/results/versions
         
         # Copy all downloaded results to the results directory
         if [ -d "./downloaded-results" ]; then
@@ -215,7 +216,7 @@ jobs:
               echo "Processing artifact: $artifact"
               # Extract version from artifact name
               version_name=$(basename "$artifact" | sed 's/benchmark-results-node-//')
-              target_dir="results/versions/node_$version_name"
+              target_dir="public/results/versions/node_$version_name"
               
               echo "Copying to: $target_dir"
               cp -r "$artifact"/* "$target_dir/" 2>/dev/null || true
@@ -231,17 +232,25 @@ jobs:
         fi
         
         # Check if we have any existing results
-        if [ -d "results/versions" ] && [ "$(ls -A results/versions)" ]; then
+        if [ -d "public/results/versions" ] && [ "$(ls -A public/results/versions)" ]; then
           echo "Found existing benchmark results:"
-          ls -la results/versions/
+          ls -la public/results/versions/
+          
+          # Show what's in each version directory
+          for version_dir in public/results/versions/node_*; do
+            if [ -d "$version_dir" ]; then
+              echo "Version $version_dir contains:"
+              ls -la "$version_dir"
+            fi
+          done
         else
           echo "No benchmark results found, creating placeholder structure..."
-          mkdir -p results/versions/placeholder
-          echo '{"message": "No benchmark data available", "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > results/versions/placeholder/placeholder.json
+          mkdir -p public/results/versions/placeholder
+          echo '{"message": "No benchmark data available", "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > public/results/versions/placeholder/placeholder.json
         fi
         
         echo "Final results structure:"
-        find results/versions -type d | head -20
+        find public/results/versions -type d | head -20
     
     - name: Generate version comparison report
       run: |
@@ -284,7 +293,7 @@ jobs:
       with:
         name: version-comparison
         path: |
-          results/
+          public/results/
           docs/
         retention-days: 30
 
@@ -326,12 +335,39 @@ jobs:
         mkdir -p release-package
         
         # Copy benchmark results and docs
-        if [ -d "./release-assets/results" ]; then
+        if [ -d "./release-assets/public/results" ]; then
+          cp -r ./release-assets/public/results release-package/
+        elif [ -d "./release-assets/results" ]; then
           cp -r ./release-assets/results release-package/
+        else
+          echo "⚠️ No results found in release assets, checking local results..."
+          if [ -d "public/results" ]; then
+            cp -r public/results release-package/
+          fi
         fi
         
         if [ -d "./release-assets/docs" ]; then
           cp -r ./release-assets/docs release-package/
+        fi
+        
+        # Verify we have actual data
+        echo "📊 Checking release package contents..."
+        if [ -d "release-package/results/versions" ]; then
+          echo "Found results in release package:"
+          ls -la release-package/results/versions/
+          
+          # Count actual data files
+          TOTAL_FILES=0
+          for version_dir in release-package/results/versions/node_*; do
+            if [ -d "$version_dir" ]; then
+              FILE_COUNT=$(find "$version_dir" -type f | wc -l)
+              TOTAL_FILES=$((TOTAL_FILES + FILE_COUNT))
+              echo "  $version_dir: $FILE_COUNT files"
+            fi
+          done
+          echo "Total data files: $TOTAL_FILES"
+        else
+          echo "⚠️ No results found in release package!"
         fi
         
         # Create a summary file
@@ -348,7 +384,7 @@ Generated on: $(date -u)
 Download this release and extract the contents to use with the async-node-stats application.
 
 ## Node.js Versions Tested
-$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /')
+$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /' || echo "- No versions found")
 EOF
         
         # Create a JSON manifest
@@ -357,10 +393,11 @@ EOF
   "releaseType": "benchmark-results",
   "generatedAt": "$(date -u -Iseconds)",
   "nodeVersions": [
-$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//')
+$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//' || echo '    "none"')
   ],
   "totalSize": "$(du -sh release-package | cut -f1)",
-  "workflowRun": "${{ github.run_id }}"
+  "workflowRun": "${{ github.run_id }}",
+  "dataFiles": $TOTAL_FILES
 }
 EOF
         

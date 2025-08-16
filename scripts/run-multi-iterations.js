@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 class MultiIterationRunner {
   constructor(iterations = 10) {
     this.iterations = iterations;
-    this.resultsDir = path.join(process.cwd(), 'results');
+    this.resultsDir = path.join(process.cwd(), 'public', 'results');
     this.versionsDir = path.join(this.resultsDir, 'versions');
   }
 

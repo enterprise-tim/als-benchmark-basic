@@ -70,7 +70,7 @@ async function runAll() {
     await generateDocs();
     
     console.log('\n🎉 Complete analysis finished!');
-    console.log('📁 Results available in: ./results/');
+    console.log('📁 Results available in: ./public/results/');
     console.log('🌐 Documentation available in: ./docs/');
     console.log('🚀 Start local server: npm run serve-docs');
     

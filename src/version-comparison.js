@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 async function generateVersionComparison() {
-  const resultsDir = path.join(process.cwd(), 'results', 'versions');
+  const resultsDir = path.join(process.cwd(), 'public', 'results', 'versions');
   const docsDir = path.join(process.cwd(), 'docs');
   
   // Ensure docs directory exists

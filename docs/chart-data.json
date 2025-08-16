@@ -1,109 +1,25 @@
 {
-  "generatedAt": "2025-08-16T03:39:27.026Z",
+  "generatedAt": "2025-08-16T17:18:48.335Z",
   "performanceChart": {
-    "labels": [
-      "16.20.2",
-      "18.19.1",
-      "20.11.0",
-      "21.7.3",
-      "22.0.0",
-      "24.6.0"
-    ],
+    "labels": [],
     "datasets": [
       {
         "label": "AsyncLocalStorage Overhead (%)",
-        "data": [
-          -0.07,
-          4.03,
-          1.75,
-          -0.3,
-          -0.11,
-          3.69
-        ],
+        "data": [],
         "backgroundColor": "rgba(54, 162, 235, 0.2)",
         "borderColor": "rgba(54, 162, 235, 1)",
-        "borderWidth": 1
-      },
-      {
-        "label": "Nested ALS Overhead (%)",
-        "data": [
-          73.57,
-          70.58,
-          67.82,
-          70.73,
-          55.8,
-          105.8
-        ],
-        "backgroundColor": "rgba(255, 99, 132, 0.2)",
-        "borderColor": "rgba(255, 99, 132, 1)",
         "borderWidth": 1
       }
     ]
   },
   "memoryChart": {
-    "labels": [
-      "16.20.2",
-      "18.19.1",
-      "20.11.0",
-      "21.7.3",
-      "22.0.0",
-      "24.6.0"
-    ],
+    "labels": [],
     "datasets": [
       {
         "label": "Memory Overhead (MB)",
-        "data": [
-          -1.5,
-          -13.27,
-          -3.84,
-          19.38,
-          -7.02,
-          10.13
-        ],
-        "backgroundColor": "rgba(75, 192, 192, 0.2)",
-        "borderColor": "rgba(75, 192, 192, 1)",
-        "borderWidth": 2,
-        "fill": false,
-        "tension": 0.1
-      }
-    ]
-  },
-  "versionComparisonChart": {
-    "labels": [
-      "16.20.2",
-      "18.19.1",
-      "20.11.0",
-      "21.7.3",
-      "22.0.0",
-      "24.6.0"
-    ],
-    "datasets": [
-      {
-        "label": "Performance Improvement (%)",
-        "data": [
-          0,
-          -5857.142857142858,
-          56.575682382134,
-          117.14285714285712,
-          -63.33333333333334,
-          -3454.5454545454545
-        ],
-        "backgroundColor": [
-          "rgba(76, 175, 80, 0.2)",
-          "rgba(244, 67, 54, 0.2)",
-          "rgba(76, 175, 80, 0.2)",
-          "rgba(76, 175, 80, 0.2)",
-          "rgba(244, 67, 54, 0.2)",
-          "rgba(244, 67, 54, 0.2)"
-        ],
-        "borderColor": [
-          "rgba(76, 175, 80, 1)",
-          "rgba(244, 67, 54, 1)",
-          "rgba(76, 175, 80, 1)",
-          "rgba(76, 175, 80, 1)",
-          "rgba(244, 67, 54, 1)",
-          "rgba(244, 67, 54, 1)"
-        ],
+        "data": [],
+        "backgroundColor": "rgba(255, 99, 132, 0.2)",
+        "borderColor": "rgba(255, 99, 132, 1)",
         "borderWidth": 1
       }
     ]

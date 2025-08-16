@@ -33,35 +33,35 @@
   </div>
 
   <h2>Version Comparison Table</h2>
-  <table class="version-table"><thead><tr><th>Node.js Version</th><th>Iterations</th><th>Basic ALS Overhead</th><th>Std Dev</th><th>CV (%)</th><th>Nested ALS Overhead</th><th>Std Dev</th><th>CV (%)</th><th>Memory Overhead (MB)</th><th>Benchmark Count</th><th>Test Date</th></tr></thead><tbody><tr><td><strong>v24.6.0</strong></td><td>1</td><td class="success">3.69%</td><td>12.30</td><td>333.3</td><td class="danger">105.8%</td><td>169.94</td><td>160.6</td><td>1.69</td><td>6</td><td>8/15/2025</td></tr><tr><td><strong>v24.0.0</strong></td><td>1</td><td class="success">1.41%</td><td>7.79</td><td>553.7</td><td class="danger">101.8%</td><td>166.25</td><td>163.3</td><td>2.77</td><td>6</td><td>8/16/2025</td></tr><tr><td><strong>v23.0.0</strong></td><td>1</td><td class="success">-1.7%</td><td>5.06</td><td>296.9</td><td class="danger">101.78%</td><td>162.89</td><td>160.1</td><td>-5.02</td><td>6</td><td>8/16/2025</td></tr><tr><td><strong>v22.18.0</strong></td><td>1</td><td class="success">-7.36%</td><td>11.18</td><td>151.9</td><td class="danger">132.83%</td><td>207.46</td><td>156.2</td><td>1.42</td><td>6</td><td>8/16/2025</td></tr><tr><td><strong>v22.0.0</strong></td><td>1</td><td class="success">0%</td><td>0.00</td><td>NaN</td><td class="success">0%</td><td>0.00</td><td>NaN</td><td>0.00</td><td>2</td><td>8/15/2025</td></tr><tr><td><strong>v22.0.0</strong></td><td>1</td><td class="success">-0.11%</td><td>9.77</td><td>9052.2</td><td class="danger">55.8%</td><td>112.52</td><td>201.6</td><td>-1.17</td><td>6</td><td>8/15/2025</td></tr><tr><td><strong>v21.7.3</strong></td><td>1</td><td class="success">-0.3%</td><td>2.28</td><td>764.1</td><td class="danger">70.73%</td><td>128.65</td><td>181.9</td><td>3.23</td><td>6</td><td>8/15/2025</td></tr><tr><td><strong>v21.0.0</strong></td><td>1</td><td class="success">4.58%</td><td>13.78</td><td>301.1</td><td class="danger">80.66%</td><td>138.13</td><td>171.3</td><td>2.26</td><td>6</td><td>8/16/2025</td></tr><tr><td><strong>v20.11.0</strong></td><td>1</td><td class="success">1.75%</td><td>8.58</td><td>489.9</td><td class="danger">67.82%</td><td>125.97</td><td>185.8</td><td>-0.64</td><td>6</td><td>8/15/2025</td></tr><tr><td><strong>v20.0.0</strong></td><td>1</td><td class="success">-4.31%</td><td>6.29</td><td>146.1</td><td class="danger">86.58%</td><td>156.93</td><td>181.3</td><td>4.10</td><td>6</td><td>8/16/2025</td></tr><tr><td><strong>v18.19.1</strong></td><td>1</td><td class="success">4.03%</td><td>5.93</td><td>147.0</td><td class="danger">70.58%</td><td>133.37</td><td>189.0</td><td>-2.21</td><td>6</td><td>8/15/2025</td></tr></tbody></table><div class="card" style="margin-top: 1rem;"><h4>Understanding the Results</h4><ul><li><strong>Basic ALS Overhead:</strong> Performance impact of using AsyncLocalStorage.run() vs not using it</li><li><strong>Nested ALS Overhead:</strong> Additional impact when using nested AsyncLocalStorage contexts</li><li><strong>Memory Overhead:</strong> Additional memory usage when using AsyncLocalStorage</li><li><strong>Std Dev:</strong> Standard deviation across iterations - lower values indicate more consistent performance</li><li><strong>CV (%):</strong> Coefficient of Variation - relative standard deviation (lower is better, indicates more consistent performance)</li><li><strong>Color Coding:</strong> Green (≤5%), Orange (5-15%), Red (>15%) for basic overhead; Green (≤25%), Orange (25-50%), Red (>50%) for nested overhead</li></ul><p><strong>Note:</strong> Lower percentages indicate better performance. Newer Node.js versions generally show improved AsyncLocalStorage performance. Multiple iterations provide statistical confidence in the results.</p></div>
+  <p>No version data available for comparison.</p>
 
   <h2>Analysis</h2>
   <p>Based on the collected data, here's a summary of the performance trends and recommendations:</p>
   <ul>
-    <li><strong>Best Performing Version:</strong> v22.18.0</li>
-    <li><strong>Worst Performing Version:</strong> v21.0.0</li>
-    <li><strong>Average Overhead:</strong> 0.15%</li>
+    <li><strong>Best Performing Version:</strong> N/A</li>
+    <li><strong>Worst Performing Version:</strong> N/A</li>
+    <li><strong>Average Overhead:</strong> 0.00%</li>
     <li><strong>Overhead Trend:</strong> improving</li>
-    <li><strong>Most Consistent Version:</strong> v20.0.0</li>
-    <li><strong>Average Coefficient of Variation:</strong> NaN%</li>
+    <li><strong>Most Consistent Version:</strong> N/A</li>
+    <li><strong>Average Coefficient of Variation:</strong> 0.0%</li>
   </ul>
 
   <h2>Recommendations</h2>
   <ul>
-    <li>✅ AsyncLocalStorage is generally safe to use in production with minimal overhead</li><li>🔧 Consider using Node.js v22.18.0 for optimal AsyncLocalStorage performance</li><li>⚠️ Avoid deeply nested AsyncLocalStorage contexts to minimize performance impact</li><li>📊 AsyncLocalStorage overhead is acceptable for most production workloads</li>
+    
   </ul>
 
   <h2>Insights</h2>
   <ul>
-    <li>AsyncLocalStorage performance varies by 11.94% between Node.js versions</li><li>Performance has generally improved in newer Node.js versions</li><li>6 version(s) show minimal AsyncLocalStorage overhead (<2%)</li><li>Nested AsyncLocalStorage calls add significant overhead (>50%) across all tested versions</li>
+    
   </ul>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const performanceChart = new Chart(document.getElementById('performanceChart'), {"labels":["18.19.1","20.0.0","20.11.0","21.0.0","21.7.3","22.0.0","22.0.0","22.18.0","23.0.0","24.0.0","24.6.0"],"datasets":[{"label":"AsyncLocalStorage Overhead (%)","data":[4.03,-4.31,1.75,4.58,-0.3,0,-0.11,-7.36,-1.7,1.41,3.69],"backgroundColor":"rgba(54, 162, 235, 0.2)","borderColor":"rgba(54, 162, 235, 1)","borderWidth":1},{"label":"Nested ALS Overhead (%)","data":[70.58,86.58,67.82,80.66,70.73,0,55.8,132.83,101.78,101.8,105.8],"backgroundColor":"rgba(255, 99, 132, 0.2)","borderColor":"rgba(255, 99, 132, 1)","borderWidth":1}]});
-      const nestedOverheadChart = new Chart(document.getElementById('nestedOverheadChart'), {"labels":["18.19.1","20.0.0","20.11.0","21.0.0","21.7.3","22.0.0","22.0.0","22.18.0","23.0.0","24.0.0","24.6.0"],"datasets":[{"label":"Performance Improvement (%)","data":[0,206.94789081885853,-140.60324825986078,-161.71428571428572,106.55021834061135,-100,null,6590.909090909091,-76.90217391304348,-182.94117647058823,-161.7021276595745],"backgroundColor":["rgba(76, 175, 80, 0.2)","rgba(76, 175, 80, 0.2)","rgba(244, 67, 54, 0.2)","rgba(244, 67, 54, 0.2)","rgba(76, 175, 80, 0.2)","rgba(244, 67, 54, 0.2)","rgba(76, 175, 80, 0.2)","rgba(76, 175, 80, 0.2)","rgba(244, 67, 54, 0.2)","rgba(244, 67, 54, 0.2)","rgba(244, 67, 54, 0.2)"],"borderColor":["rgba(76, 175, 80, 1)","rgba(76, 175, 80, 1)","rgba(244, 67, 54, 1)","rgba(244, 67, 54, 1)","rgba(76, 175, 80, 1)","rgba(244, 67, 54, 1)","rgba(76, 175, 80, 1)","rgba(76, 175, 80, 1)","rgba(244, 67, 54, 1)","rgba(244, 67, 54, 1)","rgba(244, 67, 54, 1)"],"borderWidth":1}]}); // Reusing versionComparisonChart for nested overhead
-      const memoryChart = new Chart(document.getElementById('memoryChart'), {"labels":["18.19.1","20.0.0","20.11.0","21.0.0","21.7.3","22.0.0","22.0.0","22.18.0","23.0.0","24.0.0","24.6.0"],"datasets":[{"label":"Memory Overhead (MB)","data":[-2.21,4.1,-0.64,2.26,3.23,0,-1.17,1.42,-5.02,2.77,1.69],"backgroundColor":"rgba(75, 192, 192, 0.2)","borderColor":"rgba(75, 192, 192, 1)","borderWidth":2,"fill":false,"tension":0.1}]});
+      const performanceChart = new Chart(document.getElementById('performanceChart'), {"labels":[],"datasets":[{"label":"AsyncLocalStorage Overhead (%)","data":[],"backgroundColor":"rgba(54, 162, 235, 0.2)","borderColor":"rgba(54, 162, 235, 1)","borderWidth":1},{"label":"Nested ALS Overhead (%)","data":[],"backgroundColor":"rgba(255, 99, 132, 0.2)","borderColor":"rgba(255, 99, 132, 1)","borderWidth":1}]});
+      const nestedOverheadChart = new Chart(document.getElementById('nestedOverheadChart'), {"labels":[],"datasets":[{"label":"Performance Improvement (%)","data":[],"backgroundColor":[],"borderColor":[],"borderWidth":1}]}); // Reusing versionComparisonChart for nested overhead
+      const memoryChart = new Chart(document.getElementById('memoryChart'), {"labels":[],"datasets":[{"label":"Memory Overhead (MB)","data":[],"backgroundColor":"rgba(75, 192, 192, 0.2)","borderColor":"rgba(75, 192, 192, 1)","borderWidth":2,"fill":false,"tension":0.1}]});
     });
   </script>
 </body>

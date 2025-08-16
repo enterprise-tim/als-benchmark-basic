@@ -320,7 +320,7 @@ class MemoryProfiler {
   }
 
   async saveResults() {
-    const resultsDir = path.join(process.cwd(), 'results');
+    const resultsDir = path.join(process.cwd(), 'public', 'results');
     try {
       await fs.mkdir(resultsDir, { recursive: true });
     } catch (error) {
