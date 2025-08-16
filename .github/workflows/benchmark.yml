@@ -402,7 +402,7 @@ EOF
           [${{ github.workflow }} #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           
           ### Usage
-          Download the \`async-node-stats-benchmark-*.tar.gz\` file and extract it to use with the async-node-stats application.
+          Download the `async-node-stats-benchmark-*.tar.gz` file and extract it to use with the async-node-stats application.
           
           The deploy workflow will automatically download and use the latest release for building the site.
         draft: false
