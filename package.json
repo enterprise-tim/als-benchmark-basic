@@ -20,6 +20,7 @@
     "serve-docs": "npx http-server docs -p 8080",
     "validate-versions": "node scripts/validate-versions.js",
     "get-versions": "node scripts/get-node-versions.js",
+    "multi-iteration": "node scripts/run-multi-iterations.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

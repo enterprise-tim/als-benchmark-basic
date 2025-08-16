@@ -107,6 +107,8 @@ jobs:
         echo "Current matrix index: ${{ strategy.job-index }}"
     
     - name: Run multi-iteration benchmarks
+      env:
+        NODE_VERSION: ${{ matrix.node-version }}
       run: |
         echo "🚀 Running ${{ github.event.inputs.iterations || 10 }} iterations for Node.js ${{ matrix.node-version }}"
         echo "📊 Matrix job ${{ strategy.job-index }} of ${{ strategy.job-total }}"
