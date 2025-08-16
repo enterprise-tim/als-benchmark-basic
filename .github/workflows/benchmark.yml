@@ -443,7 +443,21 @@ jobs:
           find ./release-assets -maxdepth 1 -name "*.json" | head -5
           find ./release-assets -maxdepth 1 -name "*.json" -exec cp {} release-package/results/ \; 2>/dev/null || true
           
-          echo "✅ Copied benchmark data to release package"
+          # Copy important comparison and analysis files from docs directory if they exist
+          if [ -d "docs" ]; then
+            echo "📊 Looking for analysis files in docs directory:"
+            ls -la docs/*.json 2>/dev/null || echo "No JSON files in docs/"
+            
+            # Copy key analysis files
+            for file in "version-comparison.json" "detailed-results.json" "chart-data.json"; do
+              if [ -f "docs/$file" ]; then
+                echo "📋 Copying docs/$file to release"
+                cp "docs/$file" "release-package/results/"
+              fi
+            done
+          fi
+          
+          echo "✅ Copied benchmark data and analysis files to release package"
           RESULTS_FOUND=true
         # Second check: release-assets with full public/results structure
         elif [ -d "./release-assets/public/results" ]; then
@@ -505,14 +519,27 @@ jobs:
           echo "Generated on: $(date -u)"
           echo ""
           echo "## Contents"
-          echo "- results/ - Raw benchmark data for each Node.js version"
+          echo "- results/versions/ - Raw benchmark data for each Node.js version"
+          echo "- results/version-comparison.json - Cross-version performance comparison"
+          echo "- results/detailed-results.json - Detailed analysis and statistics"
+          echo "- results/chart-data.json - Data formatted for visualization"
           echo ""
           echo "## Usage"
           echo "Download this release and extract the contents to use with the async-node-stats application."
-          echo "The docs directory is generated during site build and is not included in this release."
+          echo "The HTML documentation is generated during site build and is not included in this release."
           echo ""
           echo "## Node.js Versions Tested"
           find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /' || echo "- No versions found"
+          echo ""
+          echo "## Analysis Files"
+          echo "The following analysis files are included if available:"
+          for file in version-comparison.json detailed-results.json chart-data.json; do
+            if [ -f "release-package/results/$file" ]; then
+              echo "- ✅ $file"
+            else
+              echo "- ❌ $file (not generated)"
+            fi
+          done
         } > release-package/README.md
         
         # Create a JSON manifest
