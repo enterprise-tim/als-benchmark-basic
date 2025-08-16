@@ -42,14 +42,14 @@ const VersionAnalysis = () => {
   const calculateImprovement = (versions) => {
     if (versions.length < 2) return "0%"
     
-    const sortedVersions = [...versions].sort((a, b) => a.avgOverhead - b.avgOverhead)
-    const best = sortedVersions[0].avgOverhead
-    const worst = sortedVersions[sortedVersions.length - 1].avgOverhead
-    
-    if (worst === 0) return "0%"
-    
-    const improvement = ((worst - best) / Math.abs(worst)) * 100
-    return `${improvement.toFixed(1)}%`
+      const sortedVersions = [...versions].sort((a, b) => (a.avgOverheadPercent || 0) - (b.avgOverheadPercent || 0))
+  const best = sortedVersions[0].avgOverheadPercent || 0
+  const worst = sortedVersions[sortedVersions.length - 1].avgOverheadPercent || 0
+  
+  if (worst === 0) return "0%"
+  
+  const improvement = ((worst - best) / Math.abs(worst)) * 100
+  return `${improvement.toFixed(1)}%`
   }
 
   useEffect(() => {
@@ -80,28 +80,28 @@ const VersionAnalysis = () => {
         
         // Transform the data to match the expected format
         const transformedData = {
-          versions: data.versions.map(v => ({
-            version: v.cleanVersion,
-            basicOverhead: v.avgOverhead || 0,
-            nestedOverhead: v.avgNestedOverhead || 0,
-            memoryOverhead: v.memoryOverheadMB || 0,
+          versions: data.comparisons.map(v => ({
+            version: v.nodeVersion,
+            basicOverhead: v.avgOverheadPercent || 0,
+            nestedOverhead: v.avgNestedOverheadPercent || 0,
+            memoryOverhead: (v.totalMemoryOverheadBytes || 0) / (1024 * 1024), // Convert bytes to MB
             // Use actual baseline data from benchmark results
-            baselineTime: v.baselineTime || null,
-            baselineMemory: v.baselineMemory || 0,
+            baselineTime: null, // Not available in this data structure
+            baselineMemory: 0, // Not available in this data structure
             status: "stable",
-            testDate: v.testDate,
-            benchmarkCount: v.benchmarkCount || 0,
-            iterations: v.iterations || 1,
-            benchmarks: v.benchmarks || []
+            testDate: new Date().toISOString(), // Use current date since not available
+            benchmarkCount: (v.traditionalTestCount || 0) + (v.distributedTestCount || 0),
+            iterations: 1, // Not available in this data structure
+            benchmarks: v.testResults || []
           })),
           summary: {
-            bestVersion: data.versions.reduce((best, v) => 
-              v.avgOverhead < best.avgOverhead ? v : best
-            ).cleanVersion,
-            worstVersion: data.versions.reduce((worst, v) => 
-              v.avgOverhead > worst.avgOverhead ? v : worst
-            ).cleanVersion,
-            improvement: calculateImprovement(data.versions),
+            bestVersion: data.comparisons.reduce((best, v) => 
+              (v.avgOverheadPercent || 0) < (best.avgOverheadPercent || 0) ? v : best
+            ).nodeVersion,
+            worstVersion: data.comparisons.reduce((worst, v) => 
+              (v.avgOverheadPercent || 0) > (worst.avgOverheadPercent || 0) ? v : worst
+            ).nodeVersion,
+            improvement: calculateImprovement(data.comparisons),
             trend: "improving"
           }
         }
@@ -817,7 +817,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                                         Overhead:
                                       </Typography>
                                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {(benchmark.overhead || 0).toFixed(1)}%
+                                        {(benchmark.overheadPercent || 0).toFixed(1)}%
                                       </Typography>
                                     </Grid>
                                     <Grid item xs={4}>
@@ -825,7 +825,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                                         Nested:
                                       </Typography>
                                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {(benchmark.nestedOverhead || 0).toFixed(1)}%
+                                        {(benchmark.nestedOverheadPercent || 0).toFixed(1)}%
                                       </Typography>
                                     </Grid>
                                     <Grid item xs={4}>
@@ -833,10 +833,10 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                                         Memory:
                                       </Typography>
                                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {(benchmark.memoryMB || 0).toFixed(1)} MB
+                                        {((benchmark.memoryOverheadBytes || 0) / (1024 * 1024)).toFixed(1)} MB
                                       </Typography>
                                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                                        {benchmark.memoryMB > 0 ? 'Overhead' : 'Difference'}
+                                        {(benchmark.memoryOverheadBytes || 0) > 0 ? 'Overhead' : 'Difference'}
                                       </Typography>
                                     </Grid>
                                   </Grid>
