@@ -64,7 +64,17 @@ const VersionAnalysis = () => {
         // Load the actual version comparison data from the generated JSON
         const response = await fetch(`${basePath}/version-comparison.json`)
         if (!response.ok) {
-          throw new Error(`Failed to load version data: ${response.status}`)
+          if (response.status === 404) {
+            // No data available - this is expected when no benchmarks have been run
+            setError({
+              type: 'no-data',
+              message: 'No benchmark data is currently available. This usually means no benchmarks have been run yet, or the latest results are still being processed.',
+              details: 'The version analysis page requires benchmark data to be generated from actual performance tests. Check back later after benchmarks have completed.'
+            })
+          } else {
+            throw new Error(`Failed to load version data: ${response.status}`)
+          }
+          return
         }
         
         const data = await response.json()
@@ -345,9 +355,39 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
   }
 
   if (error) {
+    // Handle different types of errors
+    if (error.type === 'no-data') {
+      return (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <Alert severity="info" sx={{ width: '100%', maxWidth: 600 }}>
+            <Typography variant="h6" gutterBottom>
+              📊 No Benchmark Data Available
+            </Typography>
+            <Typography variant="body1" paragraph>
+              {error.message}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {error.details}
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+              This page will automatically populate once benchmark results are available from the performance testing workflow.
+            </Typography>
+          </Alert>
+        </Box>
+      )
+    }
+    
+    // Handle other errors
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Alert severity="error" sx={{ width: '100%' }}>{error}</Alert>
+        <Alert severity="error" sx={{ width: '100%' }}>
+          <Typography variant="h6" gutterBottom>
+            ❌ Error Loading Data
+          </Typography>
+          <Typography variant="body1">
+            {typeof error === 'string' ? error : error.message || 'An unexpected error occurred'}
+          </Typography>
+        </Alert>
       </Box>
     )
   }

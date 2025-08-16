@@ -38,6 +38,10 @@ async function loadDataIndex() {
     }
     
     if (!response.ok) {
+      if (response.status === 404) {
+        console.log('No data-index.json found - no benchmark data available');
+        return null; // Return null to indicate no data
+      }
       throw new Error(`Failed to load data index: ${response.statusText}`);
     }
     
@@ -46,8 +50,8 @@ async function loadDataIndex() {
     return dataIndex.versions;
   } catch (error) {
     console.warn('Could not load data index, using fallback:', error);
-    // Fallback to hardcoded index if the file can't be loaded
-    return createFallbackDataIndex();
+    // Don't use fallback data when no real data exists
+    return null;
   }
 }
 
@@ -348,6 +352,12 @@ function processMemoryData(data) {
 
 // Get aggregated performance data across all versions
 async function getPerformanceComparison() {
+  const dataIndex = await loadDataIndex();
+  if (!dataIndex) {
+    console.log('No benchmark data available');
+    return []; // Return empty array when no data
+  }
+  
   const performanceData = [];
   
   for (const version of NODE_VERSIONS) {
@@ -365,6 +375,12 @@ async function getPerformanceComparison() {
 
 // Get aggregated memory data across all versions
 async function getMemoryComparison() {
+  const dataIndex = await loadDataIndex();
+  if (!dataIndex) {
+    console.log('No memory data available');
+    return []; // Return empty array when no data
+  }
+  
   const memoryData = [];
   
   for (const version of NODE_VERSIONS) {
