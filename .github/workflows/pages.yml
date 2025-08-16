@@ -1,5 +1,10 @@
 name: Deploy to GitHub Pages
 
+# This workflow deploys the benchmark results site to GitHub Pages.
+# Note: When triggered by workflow_run, only artifacts from the main workflow run
+# are accessible. Individual benchmark artifacts from matrix jobs are not available,
+# so we rely on the 'version-comparison' artifact which consolidates all the data.
+
 on:
   workflow_run:
     workflows: ["AsyncLocalStorage Benchmark"]
@@ -60,14 +65,14 @@ jobs:
       if: github.event_name == 'workflow_run'
       run: |
         echo "🔍 Debugging downloaded artifacts..."
-        echo "Individual benchmark artifacts:"
+        echo "Individual benchmark artifacts (may be empty due to matrix job artifacts not being accessible):"
         ls -la ./downloaded-artifacts/ || echo "No individual artifacts found"
         echo ""
-        echo "Version comparison artifact:"
+        echo "Version comparison artifact (this should contain all the data we need):"
         ls -la ./downloaded-comparison/ || echo "No comparison artifact found"
         echo ""
-        echo "Available artifacts in workflow run:"
-        gh api repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts --jq '.artifacts[] | {name: .name, size: .size_in_bytes, created: .created_at}'
+        echo "Note: Individual benchmark artifacts from matrix jobs are not accessible via workflow_run trigger."
+        echo "The version-comparison artifact should contain all the consolidated data."
     
     - name: Download benchmark artifacts (manual dispatch)
       if: github.event_name == 'workflow_dispatch'
@@ -83,9 +88,26 @@ jobs:
         # Create results directory structure
         mkdir -p results/versions
         
-        # Process downloaded benchmark artifacts (individual version results)
-        if [ -d "./downloaded-artifacts" ]; then
-          echo "Processing individual benchmark artifacts..."
+        # Process version comparison artifact first (this should contain all the consolidated data)
+        if [ -d "./downloaded-comparison" ]; then
+          echo "Processing version comparison artifact (primary data source)..."
+          
+          # Copy the results and docs from the comparison artifact
+          if [ -d "./downloaded-comparison/results" ]; then
+            echo "Copying comparison results..."
+            cp -r ./downloaded-comparison/results/* results/ 2>/dev/null || true
+          fi
+          
+          if [ -d "./downloaded-comparison/docs" ]; then
+            echo "Copying comparison docs..."
+            cp -r ./downloaded-comparison/docs/* docs/ 2>/dev/null || true
+          fi
+        fi
+        
+        # Process downloaded benchmark artifacts (individual version results) as backup
+        # Note: These may not be available due to matrix job artifact access limitations
+        if [ -d "./downloaded-artifacts" ] && [ "$(ls -A downloaded-artifacts 2>/dev/null)" ]; then
+          echo "Processing individual benchmark artifacts (backup data source)..."
           
           # Copy version-specific results
           for artifact in downloaded-artifacts/*/; do
@@ -100,26 +122,24 @@ jobs:
               cp -r "$artifact"/* "$target_dir/" 2>/dev/null || true
             fi
           done
+        else
+          echo "No individual benchmark artifacts available (this is expected for workflow_run triggers)"
         fi
         
-        # Process version comparison artifact (if available)
-        if [ -d "./downloaded-comparison" ]; then
-          echo "Processing version comparison artifact..."
+        # If we still don't have results, check for existing data in the repository
+        if [ ! -d "results/versions" ] || [ -z "$(ls -A results/versions 2>/dev/null)" ]; then
+          echo "No benchmark data found in artifacts, checking for existing data in repository..."
           
-          # Copy the results and docs from the comparison artifact
-          if [ -d "./downloaded-comparison/results" ]; then
-            echo "Copying comparison results..."
-            cp -r ./downloaded-comparison/results/* results/ 2>/dev/null || true
-          fi
-          
-          if [ -d "./downloaded-comparison/docs" ]; then
-            echo "Copying comparison docs..."
-            cp -r ./downloaded-comparison/docs/* docs/ 2>/dev/null || true
+          # Check if we have existing results in the repository
+          if [ -d "results/versions" ] && [ "$(ls -A results/versions 2>/dev/null)" ]; then
+            echo "Found existing benchmark data in repository"
+          else
+            echo "No existing data found, will build site without benchmark data"
           fi
         fi
         
-        # Generate reports from the downloaded data
-        if [ -d "results/versions" ] && [ "$(ls -A results/versions)" ]; then
+        # Generate reports from the available data
+        if [ -d "results/versions" ] && [ "$(ls -A results/versions 2>/dev/null)" ]; then
           echo "Found benchmark data, generating reports..."
           npm run compare-versions || echo "Version comparison failed, continuing with build"
           npm run generate-report || echo "Report generation failed, continuing with build"
@@ -141,20 +161,36 @@ jobs:
     - name: Build React application
       run: |
         echo "🔨 Building React application..."
+        
+        # Ensure required directories exist before build
+        mkdir -p results docs public
+        
+        # Build the React app
         npm run build
         
         echo "📁 Build output contents:"
         ls -la dist/
         
-        # Copy any additional data files to dist
-        if [ -d "results" ]; then
+        # Copy any additional data files to dist (only if they exist)
+        if [ -d "results" ] && [ "$(ls -A results 2>/dev/null)" ]; then
           echo "📊 Copying benchmark results to build output..."
-          cp -r results dist/
+          cp -r results dist/ 2>/dev/null || echo "Failed to copy results, continuing..."
+        else
+          echo "No results directory or it's empty, skipping..."
         fi
         
-        if [ -d "docs" ]; then
+        if [ -d "docs" ] && [ "$(ls -A docs 2>/dev/null)" ]; then
           echo "📚 Copying documentation to build output..."
-          cp -r docs dist/
+          cp -r docs dist/ 2>/dev/null || echo "Failed to copy docs, continuing..."
+        else
+          echo "No docs directory or it's empty, skipping..."
+        fi
+        
+        if [ -d "public" ] && [ "$(ls -A public 2>/dev/null)" ]; then
+          echo "🌐 Copying public files to build output..."
+          cp -r public/* dist/ 2>/dev/null || echo "Failed to copy public files, continuing..."
+        else
+          echo "No public directory or it's empty, skipping..."
         fi
         
         echo "🎯 Final build output:"

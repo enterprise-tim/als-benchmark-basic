@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cp -r results dist/ && cp -r public/* dist/",
+    "build": "vite build",
     "preview": "vite preview",
     "deploy": "gh-pages -d dist",
     "start": "node src/index.js",

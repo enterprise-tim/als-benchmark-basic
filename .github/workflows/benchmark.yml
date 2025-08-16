@@ -2,9 +2,7 @@ name: AsyncLocalStorage Benchmark
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+    branches: [ performance-test ]
   schedule:
     # Run weekly on Sundays at 2 AM UTC
     - cron: '0 2 * * 0'
