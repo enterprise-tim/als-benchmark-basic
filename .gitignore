@@ -15,6 +15,13 @@ enterprise-dashboard/*.json
 *.tar.gz
 benchmark-results.tar.gz
 
+# Benchmark output files
+benchmark_*.json
+memory_*.json
+*_summary.json
+iteration-summary.json
+all-versions-summary.json
+
 # Production build
 dist/
 build/
