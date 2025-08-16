@@ -58,8 +58,11 @@ const VersionAnalysis = () => {
         setLoading(true)
         setError(null)
         
+        // Determine the correct base path for GitHub Pages
+        const basePath = process.env.NODE_ENV === 'production' ? '/async-node-stats' : '';
+        
         // Load the actual version comparison data from the generated JSON
-        const response = await fetch('/version-comparison.json')
+        const response = await fetch(`${basePath}/version-comparison.json`)
         if (!response.ok) {
           throw new Error(`Failed to load version data: ${response.status}`)
         }
@@ -100,7 +103,7 @@ const VersionAnalysis = () => {
         setVersionData(transformedData)
         
         // Load the analysis content from the markdown file
-        const analysisResponse = await fetch('/NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md')
+        const analysisResponse = await fetch(`${basePath}/NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md`)
         if (analysisResponse.ok) {
           const analysisText = await analysisResponse.text()
           setAnalysisContent(analysisText)

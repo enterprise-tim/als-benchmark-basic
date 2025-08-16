@@ -43,6 +43,31 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         run-id: ${{ github.event.workflow_run.id }}
         path: ./downloaded-artifacts
+        pattern: 'benchmark-results-node-*'
+      continue-on-error: true
+    
+    - name: Download version comparison artifact
+      if: github.event_name == 'workflow_run'
+      uses: actions/download-artifact@v4
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+        path: ./downloaded-comparison
+        pattern: 'version-comparison'
+      continue-on-error: true
+    
+    - name: Debug downloaded artifacts
+      if: github.event_name == 'workflow_run'
+      run: |
+        echo "🔍 Debugging downloaded artifacts..."
+        echo "Individual benchmark artifacts:"
+        ls -la ./downloaded-artifacts/ || echo "No individual artifacts found"
+        echo ""
+        echo "Version comparison artifact:"
+        ls -la ./downloaded-comparison/ || echo "No comparison artifact found"
+        echo ""
+        echo "Available artifacts in workflow run:"
+        gh api repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts --jq '.artifacts[] | {name: .name, size: .size_in_bytes, created: .created_at}'
     
     - name: Download benchmark artifacts (manual dispatch)
       if: github.event_name == 'workflow_dispatch'
@@ -58,12 +83,9 @@ jobs:
         # Create results directory structure
         mkdir -p results/versions
         
-        # Process downloaded artifacts
+        # Process downloaded benchmark artifacts (individual version results)
         if [ -d "./downloaded-artifacts" ]; then
-          echo "Processing benchmark artifacts..."
-          
-          # Find and copy all benchmark results
-          find ./downloaded-artifacts -name "*.json" -exec cp {} results/ \;
+          echo "Processing individual benchmark artifacts..."
           
           # Copy version-specific results
           for artifact in downloaded-artifacts/*/; do
@@ -78,15 +100,31 @@ jobs:
               cp -r "$artifact"/* "$target_dir/" 2>/dev/null || true
             fi
           done
+        fi
+        
+        # Process version comparison artifact (if available)
+        if [ -d "./downloaded-comparison" ]; then
+          echo "Processing version comparison artifact..."
           
-          # Generate reports from the downloaded data
-          if [ -d "results/versions" ]; then
-            echo "Found benchmark data, generating reports..."
-            npm run compare-versions || echo "Version comparison failed, continuing with build"
-            npm run generate-report || echo "Report generation failed, continuing with build"
+          # Copy the results and docs from the comparison artifact
+          if [ -d "./downloaded-comparison/results" ]; then
+            echo "Copying comparison results..."
+            cp -r ./downloaded-comparison/results/* results/ 2>/dev/null || true
           fi
+          
+          if [ -d "./downloaded-comparison/docs" ]; then
+            echo "Copying comparison docs..."
+            cp -r ./downloaded-comparison/docs/* docs/ 2>/dev/null || true
+          fi
+        fi
+        
+        # Generate reports from the downloaded data
+        if [ -d "results/versions" ] && [ "$(ls -A results/versions)" ]; then
+          echo "Found benchmark data, generating reports..."
+          npm run compare-versions || echo "Version comparison failed, continuing with build"
+          npm run generate-report || echo "Report generation failed, continuing with build"
         else
-          echo "No benchmark artifacts found, using existing data if available..."
+          echo "No benchmark data found, using existing data if available..."
         fi
         
         # Ensure we have the main site files

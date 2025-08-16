@@ -103,8 +103,8 @@ class MultiIterationRunner {
 
   async runBenchmark(iterationDir) {
     try {
-      // Run the distributed benchmark
-      const result = execSync('npm run benchmark-distributed', {
+      // Run the standard benchmark (not distributed)
+      const result = execSync('npm run benchmark', {
         cwd: process.cwd(),
         encoding: 'utf8',
         maxBuffer: 1024 * 1024 * 10 // 10MB buffer

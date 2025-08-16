@@ -4,12 +4,9 @@
   "description": "Performance benchmarks for AsyncLocalStorage overhead analysis across Node.js versions",
   "type": "module",
   "scripts": {
-    "dev": "./copy-results-for-dev.sh && vite",
-    "dev-cleanup": "vite && ./cleanup-dev-results.sh",
-    "dev-stop": "./cleanup-dev-results.sh",
-    "build": "vite build && mkdir -p dist/results && cp -r results/* dist/results/ 2>/dev/null || true && cp -r public/* dist/ 2>/dev/null || true && ./cleanup-dev-results.sh",
-    "preview": "./copy-results-for-dev.sh && vite preview",
-    "preview-cleanup": "vite preview && ./cleanup-dev-results.sh",
+    "dev": "vite",
+    "build": "vite build && cp -r results dist/ && cp -r public/* dist/",
+    "preview": "vite preview",
     "deploy": "gh-pages -d dist",
     "start": "node src/index.js",
     "benchmark": "node --max-old-space-size=8192 --expose-gc src/benchmark.js",
@@ -20,15 +17,10 @@
     "test-all-optimized": "npm run benchmark-optimized && npm run memory-test-verbose",
     "generate-report": "node src/report-generator.js",
     "compare-versions": "node src/version-comparison.js",
-    "multi-iteration": "node scripts/run-multi-iterations.js",
-    "all-versions": "node scripts/run-all-versions.js",
-    "test-setup": "node scripts/test-setup.js",
     "serve-docs": "npx http-server docs -p 8080",
     "validate-versions": "node scripts/validate-versions.js",
     "get-versions": "node scripts/get-node-versions.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "copy-results": "./copy-results-for-dev.sh",
-    "cleanup-results": "./cleanup-dev-results.sh"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@emotion/react": "^11.11.0",

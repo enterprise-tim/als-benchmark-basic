@@ -85,8 +85,11 @@ function Navigation() {
 }
 
 function App() {
+  // Determine the correct basename for GitHub Pages
+  const basename = process.env.NODE_ENV === 'production' ? '/async-node-stats' : '';
+  
   return (
-    <Router>
+    <Router basename={basename}>
       <Box sx={{ flexGrow: 1 }}>
         {/* Top Navigation */}
         <AppBar position="sticky" elevation={0}>

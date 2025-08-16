@@ -22,11 +22,52 @@ on:
         type: boolean
 
 jobs:
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Generate version matrix
+      id: set-matrix
+      run: |
+        echo "🔍 Reading Node.js versions from config..."
+        VERSIONS=$(node -e "
+          const config = require('./config/node-versions.json');
+          const activeVersions = Object.entries(config.versions)
+            .filter(([key, version]) => version.active)
+            .map(([key, version]) => version.exact)
+            .sort((a, b) => {
+              const aParts = a.split('.').map(Number);
+              const bParts = b.split('.').map(Number);
+              for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+                const aPart = aParts[i] || 0;
+                const bPart = bParts[i] || 0;
+                if (aPart !== bPart) return aPart - bPart;
+              }
+              return 0;
+            });
+          console.log(JSON.stringify(activeVersions));
+        ")
+        
+        echo "📋 Found versions: $VERSIONS"
+        echo "matrix={\"node-version\":$VERSIONS}" >> $GITHUB_OUTPUT
+        
+        echo "🎯 Matrix will run ${#VERSIONS[@]} Node.js versions in parallel"
+
   benchmark:
     runs-on: ubuntu-latest-4-cores
+    needs: generate-matrix
     strategy:
-      matrix:
-        node-version: ['16.20.2', '18.19.1', '20.11.0', '21.7.3', '22.18.0', '24.6.0']
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
       fail-fast: false
     
     steps:
@@ -61,10 +102,14 @@ jobs:
         echo "NPM version: $(npm --version)"
         echo "Available scripts:"
         npm run
+        echo "Matrix strategy info:"
+        echo "Total matrix jobs: ${{ strategy.job-total }}"
+        echo "Current matrix index: ${{ strategy.job-index }}"
     
     - name: Run multi-iteration benchmarks
       run: |
         echo "🚀 Running ${{ github.event.inputs.iterations || 10 }} iterations for Node.js ${{ matrix.node-version }}"
+        echo "📊 Matrix job ${{ strategy.job-index + 1 }} of ${{ strategy.job-total }}"
         
         # Ensure results directory exists
         mkdir -p results/versions/node_${{ matrix.node-version }}
@@ -143,6 +188,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: ./downloaded-results
+        pattern: 'benchmark-results-node-*'
       continue-on-error: true
     
     - name: Setup Node.js (latest)

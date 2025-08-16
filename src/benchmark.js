@@ -527,93 +527,7 @@ class AsyncLocalStorageBenchmark {
     };
   }
 
-  /**
-   * Runs the distributed system benchmark
-   * Tests AsyncLocalStorage in a realistic multi-tenant distributed rate limiter scenario
-   */
-  async runDistributedBenchmark(options = {}) {
-    console.log('\n' + '=' .repeat(60));
-    console.log('DISTRIBUTED SYSTEM BENCHMARK');
-    console.log('=' .repeat(60));
-    console.log('Testing AsyncLocalStorage in a realistic multi-tenant rate limiter scenario\n');
-
-    try {
-      // Dynamic import for CommonJS module
-      const distributedModule = await import('./benchmark-distributed.js');
-      const { runBenchmark, CONFIG } = distributedModule.default || distributedModule;
-
-      const defaultOptions = {
-        profile: 'steady',
-        enableModeFlips: true,
-        testDurationMs: 30000, // Shorter duration for integrated tests
-      };
-
-      const finalOptions = { ...defaultOptions, ...options };
-
-      console.log('Test Configuration:');
-      console.log(`- Traffic Profile: ${finalOptions.profile}`);
-      console.log(`- Mode Flips Enabled: ${finalOptions.enableModeFlips}`);
-      console.log(`- Test Duration: ${finalOptions.testDurationMs}ms`);
-      console.log(`- Tenant Count: ${CONFIG.tenantCount}`);
-      console.log(`- Base RPS: ${CONFIG.baseRPS}`);
-      console.log(`- Fan-out Degree: ${CONFIG.fanOutDegree}`);
-      console.log();
-
-      // Run ALS variant
-      const alsResults = await runBenchmark('als', finalOptions);
-      
-      // Run Non-ALS variant
-      const nonAlsResults = await runBenchmark('non-als', finalOptions);
-
-      // Compare results
-      console.log('\n' + '=' .repeat(60));
-      console.log('COMPARISON SUMMARY');
-      console.log('=' .repeat(60));
-
-      const alsStats = alsResults.stats;
-      const nonAlsStats = nonAlsResults.stats;
-
-      console.log('\nThroughput:');
-      console.log(`  ALS: ${alsStats.throughput.toFixed(2)} req/s`);
-      console.log(`  Non-ALS: ${nonAlsStats.throughput.toFixed(2)} req/s`);
-      console.log(`  Difference: ${((alsStats.throughput - nonAlsStats.throughput) / nonAlsStats.throughput * 100).toFixed(2)}%`);
-
-      console.log('\nLatency (p99):');
-      console.log(`  ALS: ${alsStats.latencies.p99}ms`);
-      console.log(`  Non-ALS: ${nonAlsStats.latencies.p99}ms`);
-      console.log(`  Overhead: ${((alsStats.latencies.p99 - nonAlsStats.latencies.p99) / nonAlsStats.latencies.p99 * 100).toFixed(2)}%`);
-
-      console.log('\nContext Integrity:');
-      console.log(`  ALS Errors: ${alsStats.contextIntegrityErrors} (${(alsStats.contextErrorRate * 100).toFixed(6)}%)`);
-      console.log(`  Non-ALS Errors: ${nonAlsStats.contextIntegrityErrors} (${(nonAlsStats.contextErrorRate * 100).toFixed(6)}%)`);
-
-      console.log('\nCross-tenant Contamination:');
-      console.log(`  ALS: ${alsStats.crossTenantContamination}`);
-      console.log(`  Non-ALS: ${nonAlsStats.crossTenantContamination}`);
-
-      if (nonAlsStats.explicitPropagationEdges > 0) {
-        console.log('\nErgonomics:');
-        console.log(`  Non-ALS Explicit Propagation Edges: ${nonAlsStats.explicitPropagationEdges}`);
-      }
-
-      // Store results
-      this.results.distributedBenchmark = {
-        als: alsResults,
-        nonAls: nonAlsResults,
-        comparison: {
-          throughputDifference: ((alsStats.throughput - nonAlsStats.throughput) / nonAlsStats.throughput * 100),
-          latencyOverhead: ((alsStats.latencies.p99 - nonAlsStats.latencies.p99) / nonAlsStats.latencies.p99 * 100),
-          alsContextErrors: alsStats.contextIntegrityErrors,
-          nonAlsContextErrors: nonAlsStats.contextIntegrityErrors,
-        }
-      };
-
-      return this.results.distributedBenchmark;
-    } catch (error) {
-      console.error('Failed to run distributed benchmark:', error);
-      throw error;
-    }
-  }
+  // Note: Distributed system benchmark removed - not needed for current analysis
 
   /**
    * Runs the complete AsyncLocalStorage benchmark suite
@@ -830,15 +744,7 @@ class AsyncLocalStorageBenchmark {
       console.log(`    Memory Usage (RSS): ${(testResult.memoryDelta.rss / 1024 / 1024).toFixed(2)}MB`);
     }
     
-    // Run distributed system benchmark if requested
-    const runDistributed = process.argv.includes('--distributed') || process.argv.includes('-d');
-    if (runDistributed) {
-      await this.runDistributedBenchmark({
-        profile: process.argv.includes('--surge') ? 'surge' : 'steady',
-        enableModeFlips: !process.argv.includes('--no-flips'),
-        testDurationMs: process.argv.includes('--quick') ? 10000 : 30000,
-      });
-    }
+    // Note: Distributed system benchmark removed - not needed for current analysis
     
     // Save results
     await this.saveResults();
