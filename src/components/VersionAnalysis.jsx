@@ -82,17 +82,17 @@ const VersionAnalysis = () => {
         const transformedData = {
           versions: data.versions.map(v => ({
             version: v.cleanVersion,
-            basicOverhead: v.avgOverhead,
-            nestedOverhead: v.avgNestedOverhead,
-            memoryOverhead: v.memoryOverheadMB,
+            basicOverhead: v.avgOverhead || 0,
+            nestedOverhead: v.avgNestedOverhead || 0,
+            memoryOverhead: v.memoryOverheadMB || 0,
             // Use actual baseline data from benchmark results
             baselineTime: v.baselineTime || null,
             baselineMemory: v.baselineMemory || 0,
             status: "stable",
             testDate: v.testDate,
-            benchmarkCount: v.benchmarkCount,
+            benchmarkCount: v.benchmarkCount || 0,
             iterations: v.iterations || 1,
-            benchmarks: v.benchmarks
+            benchmarks: v.benchmarks || []
           })),
           summary: {
             bestVersion: data.versions.reduce((best, v) => 
@@ -514,7 +514,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                       Best Performing Version
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Lowest overhead: {versionData.versions.find(v => v.version === versionData.summary.bestVersion)?.basicOverhead.toFixed(1)}%
+                      Lowest overhead: {versionData.versions.find(v => v.version === versionData.summary.bestVersion)?.basicOverhead?.toFixed(1) || '0.0'}%
                     </Typography>
                   </Box>
                 </Grid>
@@ -609,7 +609,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                               </TableCell>
                               <TableCell align="right">
                                 <Chip 
-                                  label={`${version.basicOverhead.toFixed(1)}%`}
+                                  label={`${(version.basicOverhead || 0).toFixed(1)}%`}
                                   color={getOverheadColor(version.basicOverhead)}
                                   size="small"
                                 />
@@ -618,14 +618,14 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                                 </Typography>
                                 <Typography variant="caption" display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                                   {version.basicOverhead > 0 ? 
-                                    `${(1 + version.basicOverhead/100).toFixed(1)}x baseline` : 
-                                    `${(1 - version.basicOverhead/100).toFixed(1)}x baseline`
+                                    `${(1 + (version.basicOverhead || 0)/100).toFixed(1)}x baseline` : 
+                                    `${(1 - (version.basicOverhead || 0)/100).toFixed(1)}x baseline`
                                   }
                                 </Typography>
                               </TableCell>
                               <TableCell align="right">
                                 <Chip 
-                                  label={`${version.nestedOverhead.toFixed(1)}%`}
+                                  label={`${(version.nestedOverhead || 0).toFixed(1)}%`}
                                   color={getOverheadColor(version.nestedOverhead)}
                                   size="small"
                                 />
@@ -634,14 +634,14 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                                 </Typography>
                                 <Typography variant="caption" display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                                   {version.nestedOverhead > 0 ? 
-                                    `${(1 + version.nestedOverhead/100).toFixed(1)}x baseline` : 
-                                    `${(1 - version.nestedOverhead/100).toFixed(1)}x baseline`
+                                    `${(1 + (version.nestedOverhead || 0)/100).toFixed(1)}x baseline` : 
+                                    `${(1 - (version.nestedOverhead || 0)/100).toFixed(1)}x baseline`
                                   }
                                 </Typography>
                               </TableCell>
                               <TableCell align="right">
                                 <Typography variant="body2">
-                                  {version.memoryOverhead.toFixed(1)} MB
+                                  {(version.memoryOverhead || 0).toFixed(1)} MB
                                 </Typography>
                                 <Typography variant="caption" display="block" color="text.secondary">
                                   {version.memoryOverhead > 0 ? 'Memory overhead' : 'Memory difference'}
@@ -725,7 +725,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                             Across all versions, AsyncLocalStorage memory overhead ranges from:
                           </Typography>
                           <Typography variant="h6" sx={{ color: '#e91e63' }}>
-                            {Math.min(...versionData.versions.map(v => v.memoryOverhead)).toFixed(1)} MB to {Math.max(...versionData.versions.map(v => v.memoryOverhead)).toFixed(1)} MB
+                            {Math.min(...versionData.versions.map(v => v.memoryOverhead || 0)).toFixed(1)} MB to {Math.max(...versionData.versions.map(v => v.memoryOverhead || 0)).toFixed(1)} MB
                           </Typography>
                         </Grid>
                         <Grid item xs={12} md={4}>
@@ -736,7 +736,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                             Average memory overhead across all versions:
                           </Typography>
                           <Typography variant="h6" sx={{ color: '#9c27b0' }}>
-                            {(versionData.versions.reduce((sum, v) => sum + v.memoryOverhead, 0) / versionData.versions.length).toFixed(1)} MB
+                            {(versionData.versions.reduce((sum, v) => sum + (v.memoryOverhead || 0), 0) / versionData.versions.length).toFixed(1)} MB
                           </Typography>
                         </Grid>
                         <Grid item xs={12} md={4}>
@@ -817,7 +817,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                                         Overhead:
                                       </Typography>
                                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {benchmark.overhead.toFixed(1)}%
+                                        {(benchmark.overhead || 0).toFixed(1)}%
                                       </Typography>
                                     </Grid>
                                     <Grid item xs={4}>
@@ -825,7 +825,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                                         Nested:
                                       </Typography>
                                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {benchmark.nestedOverhead.toFixed(1)}%
+                                        {(benchmark.nestedOverhead || 0).toFixed(1)}%
                                       </Typography>
                                     </Grid>
                                     <Grid item xs={4}>
@@ -833,7 +833,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                                         Memory:
                                       </Typography>
                                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {benchmark.memoryMB.toFixed(1)} MB
+                                        {(benchmark.memoryMB || 0).toFixed(1)} MB
                                       </Typography>
                                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                                         {benchmark.memoryMB > 0 ? 'Overhead' : 'Difference'}
