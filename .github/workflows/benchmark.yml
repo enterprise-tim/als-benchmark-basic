@@ -370,36 +370,38 @@ jobs:
         fi
         
         # Create a summary file
-        cat > release-package/README.md << READMEEOF
-# AsyncLocalStorage Benchmark Results
-
-Generated on: $(date -u)
-
-## Contents
-- results/ - Raw benchmark data for each Node.js version
-
-## Usage
-Download this release and extract the contents to use with the async-node-stats application.
-The docs directory is generated during site build and is not included in this release.
-
-## Node.js Versions Tested
-$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /' || echo "- No versions found")
-READMEEOF
+        {
+          echo "# AsyncLocalStorage Benchmark Results"
+          echo ""
+          echo "Generated on: $(date -u)"
+          echo ""
+          echo "## Contents"
+          echo "- results/ - Raw benchmark data for each Node.js version"
+          echo ""
+          echo "## Usage"
+          echo "Download this release and extract the contents to use with the async-node-stats application."
+          echo "The docs directory is generated during site build and is not included in this release."
+          echo ""
+          echo "## Node.js Versions Tested"
+          find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /' || echo "- No versions found"
+        } > release-package/README.md
         
         # Create a JSON manifest
-        cat > release-package/manifest.json << MANIFESTEOF
-{
-  "releaseType": "benchmark-results",
-  "generatedAt": "$(date -u -Iseconds)",
-  "nodeVersions": [
-$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//' || echo '    "none"')
-  ],
-  "totalSize": "$(du -sh release-package | cut -f1)",
-  "workflowRun": "${{ github.run_id }}",
-  "dataFiles": $TOTAL_FILES,
-  "note": "This release contains only raw benchmark data. Documentation is generated during site build."
-}
-MANIFESTEOF
+        NODE_VERSIONS=$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//' || echo '    "none"')
+        TOTAL_SIZE=$(du -sh release-package | cut -f1)
+        {
+          echo "{"
+          echo "  \"releaseType\": \"benchmark-results\","
+          echo "  \"generatedAt\": \"$(date -u -Iseconds)\","
+          echo "  \"nodeVersions\": ["
+          echo "$NODE_VERSIONS"
+          echo "  ],"
+          echo "  \"totalSize\": \"$TOTAL_SIZE\","
+          echo "  \"workflowRun\": \"${{ github.run_id }}\","
+          echo "  \"dataFiles\": $TOTAL_FILES,"
+          echo "  \"note\": \"This release contains only raw benchmark data. Documentation is generated during site build.\""
+          echo "}"
+        } > release-package/manifest.json
         
         # Create a compressed archive
         tar -czf "benchmark-results.tar.gz" -C release-package .
