@@ -455,63 +455,73 @@ jobs:
           find ./release-assets -maxdepth 1 -name "*.json" | head -5
           find ./release-assets -maxdepth 1 -name "*.json" -exec cp {} release-package/results/ \; 2>/dev/null || true
           
-          # Copy analysis files from docs directory if they exist
-          if [ -d "./release-assets/docs" ]; then
-            echo "📊 Found docs directory in release assets, copying analysis files:"
-            ls -la ./release-assets/docs/
-            
-            # Copy key analysis files
-            for file in "version-comparison.json" "detailed-results.json" "chart-data.json" "version-comparison.html" "index.html"; do
-              if [ -f "./release-assets/docs/$file" ]; then
-                echo "📋 Copying docs/$file to release"
-                cp "./release-assets/docs/$file" "release-package/results/"
-              fi
-            done
-          fi
-          
-          # Copy important comparison and analysis files from docs directory if they exist
-          if [ -d "docs" ]; then
-            echo "📊 Looking for analysis files in docs directory:"
-            ls -la docs/*.json 2>/dev/null || echo "No JSON files in docs/"
-            
-            # Copy key analysis files
-            for file in "version-comparison.json" "detailed-results.json" "chart-data.json"; do
-              if [ -f "docs/$file" ]; then
-                echo "📋 Copying docs/$file to release"
-                cp "docs/$file" "release-package/results/"
-              fi
-            done
-            
-            # Also copy HTML files for completeness
-            for file in "version-comparison.html" "index.html"; do
-              if [ -f "docs/$file" ]; then
-                echo "📋 Copying docs/$file to release"
-                cp "docs/$file" "release-package/results/"
-              fi
-            done
-          fi
-          
-          echo "✅ Copied benchmark data and analysis files to release package"
+          echo "✅ Copied benchmark data to release package"
           RESULTS_FOUND=true
         # Second check: release-assets with full public/results structure
         elif [ -d "./release-assets/public/results" ]; then
           echo "📂 Found results in ./release-assets/public/results"
           cp -r ./release-assets/public/results release-package/
+          echo "✅ Copied benchmark data to release package"
           RESULTS_FOUND=true
         elif [ -d "./release-assets/results" ]; then
           echo "📂 Found results in ./release-assets/results"
           cp -r ./release-assets/results release-package/
+          echo "✅ Copied benchmark data to release package"
           RESULTS_FOUND=true
         # Third check: local public/results (from compare-versions job)
         elif [ -d "public/results" ] && [ "$(ls -A public/results)" ]; then
           echo "📂 Found results in public/results"
           cp -r public/results release-package/
+          echo "✅ Copied benchmark data to release package"
           RESULTS_FOUND=true
         # Fourth check: direct results directory
         elif [ -d "results" ] && [ "$(ls -A results)" ]; then
           echo "📂 Found results in results/"
           cp -r results release-package/
+          echo "✅ Copied benchmark data to release package"
           RESULTS_FOUND=true
+        fi
+        
+        # ALWAYS copy analysis files from docs directory if they exist (regardless of which path was used)
+        if [ -d "./release-assets/docs" ]; then
+          echo "📊 Found docs directory in release assets, copying analysis files:"
+          ls -la ./release-assets/docs/
+          
+          # Copy key analysis files
+          for file in "version-comparison.json" "detailed-results.json" "chart-data.json" "version-comparison.html" "index.html"; do
+            if [ -f "./release-assets/docs/$file" ]; then
+              echo "📋 Copying docs/$file to release"
+              cp "./release-assets/docs/$file" "release-package/results/"
+            fi
+          done
+          
+          echo "✅ Copied analysis files to release package"
+        else
+          echo "⚠️ No docs directory found in release assets"
+        fi
+        
+        # Also check local docs directory as backup
+        if [ -d "docs" ]; then
+          echo "📊 Looking for analysis files in local docs directory:"
+          ls -la docs/*.json 2>/dev/null || echo "No JSON files in docs/"
+          
+          # Copy key analysis files
+          for file in "version-comparison.json" "detailed-results.json" "chart-data.json"; do
+            if [ -f "docs/$file" ]; then
+              echo "📋 Copying local docs/$file to release"
+              cp "docs/$file" "release-package/results/"
+            fi
+          done
+          
+          # Also copy HTML files for completeness
+          for file in "version-comparison.html" "index.html"; do
+            if [ -f "docs/$file" ]; then
+              echo "📋 Copying local docs/$file to release"
+              cp "docs/$file" "release-package/results/"
+            fi
+          done
+          
+          echo "✅ Copied local analysis files to release package"
         fi
         
         if [ "$RESULTS_FOUND" = "false" ]; then
@@ -524,7 +534,7 @@ jobs:
           echo '{"error": "No benchmark data found", "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'", "workflow_run": "'${{ github.run_id }}'"}' > release-package/results/no-data.json
         fi
         
-        echo "📁 Only copying benchmark results - docs are generated during site build"
+        echo "📁 Copying both benchmark results and analysis files"
         
         # Verify we have actual data
         echo "📊 Checking release package contents..."
