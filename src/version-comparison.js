@@ -2,7 +2,29 @@ import fs from 'fs/promises';
 import path from 'path';
 
 async function generateVersionComparison() {
-  const resultsDir = path.join(process.cwd(), 'results', 'versions');
+  // Try multiple possible locations for the results
+  let resultsDir;
+  const possiblePaths = [
+    path.join(process.cwd(), 'public', 'results', 'versions'),
+    path.join(process.cwd(), 'results', 'versions'),
+    path.join(process.cwd(), 'versions')
+  ];
+  
+  for (const path of possiblePaths) {
+    try {
+      await fs.access(path);
+      resultsDir = path;
+      console.log(`✅ Found results directory at: ${path}`);
+      break;
+    } catch (error) {
+      console.log(`❌ Path not accessible: ${path}`);
+    }
+  }
+  
+  if (!resultsDir) {
+    throw new Error(`Could not find results directory. Tried: ${possiblePaths.join(', ')}`);
+  }
+  
   const docsDir = path.join(process.cwd(), 'docs');
   
   // Ensure docs directory exists
