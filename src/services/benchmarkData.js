@@ -9,12 +9,7 @@ const NODE_VERSIONS = [
 
 // Helper function to determine the correct base path
 function getBasePath() {
-  let basePath = '';
-  if (window.location.hostname !== 'localhost' || window.location.pathname.includes('/async-node-stats')) {
-    basePath = '/async-node-stats';
-  }
-  console.log('Base path determined:', basePath, 'from hostname:', window.location.hostname, 'pathname:', window.location.pathname);
-  return basePath;
+  return ''; // No base path needed with HashRouter
 }
 
 // Load the data index file

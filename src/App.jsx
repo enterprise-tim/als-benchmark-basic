@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
+import { HashRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   AppBar,
   Toolbar,
@@ -85,11 +85,8 @@ function Navigation() {
 }
 
 function App() {
-  // Determine the correct basename for GitHub Pages
-  const basename = process.env.NODE_ENV === 'production' ? '/async-node-stats' : '';
-  
   return (
-    <Router basename={basename}>
+    <Router>
       <Box sx={{ flexGrow: 1 }}>
         {/* Top Navigation */}
         <AppBar position="sticky" elevation={0}>
