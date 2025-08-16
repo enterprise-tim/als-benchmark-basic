@@ -429,8 +429,24 @@ jobs:
         # Check all possible locations for results
         RESULTS_FOUND=false
         
-        # First check: release-assets from download-artifact
-        if [ -d "./release-assets/public/results" ]; then
+        # First check: release-assets/versions from download-artifact (this is where the data actually is!)
+        if [ -d "./release-assets/versions" ] && [ "$(ls -A ./release-assets/versions)" ]; then
+          echo "📂 Found results in ./release-assets/versions"
+          echo "📊 Copying version directories:"
+          ls -la ./release-assets/versions/
+          
+          mkdir -p release-package/results
+          cp -r ./release-assets/versions release-package/results/
+          
+          # Also copy any loose files from release-assets root
+          echo "📄 Looking for loose JSON files in release-assets root:"
+          find ./release-assets -maxdepth 1 -name "*.json" | head -5
+          find ./release-assets -maxdepth 1 -name "*.json" -exec cp {} release-package/results/ \; 2>/dev/null || true
+          
+          echo "✅ Copied benchmark data to release package"
+          RESULTS_FOUND=true
+        # Second check: release-assets with full public/results structure
+        elif [ -d "./release-assets/public/results" ]; then
           echo "📂 Found results in ./release-assets/public/results"
           cp -r ./release-assets/public/results release-package/
           RESULTS_FOUND=true
@@ -438,13 +454,13 @@ jobs:
           echo "📂 Found results in ./release-assets/results"
           cp -r ./release-assets/results release-package/
           RESULTS_FOUND=true
-        # Second check: local public/results (from compare-versions job)
-        elif [ -d "public/results" ]; then
+        # Third check: local public/results (from compare-versions job)
+        elif [ -d "public/results" ] && [ "$(ls -A public/results)" ]; then
           echo "📂 Found results in public/results"
           cp -r public/results release-package/
           RESULTS_FOUND=true
-        # Third check: direct results directory
-        elif [ -d "results" ]; then
+        # Fourth check: direct results directory
+        elif [ -d "results" ] && [ "$(ls -A results)" ]; then
           echo "📂 Found results in results/"
           cp -r results release-package/
           RESULTS_FOUND=true
