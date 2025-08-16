@@ -370,13 +370,13 @@ jobs:
         fi
         
         # Create a summary file
-        cat > release-package/README.md << EOF
+        cat > release-package/README.md << READMEEOF
 # AsyncLocalStorage Benchmark Results
 
 Generated on: $(date -u)
 
 ## Contents
-- \`results/\` - Raw benchmark data for each Node.js version
+- results/ - Raw benchmark data for each Node.js version
 
 ## Usage
 Download this release and extract the contents to use with the async-node-stats application.
@@ -384,10 +384,10 @@ The docs directory is generated during site build and is not included in this re
 
 ## Node.js Versions Tested
 $(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /' || echo "- No versions found")
-EOF
+READMEEOF
         
         # Create a JSON manifest
-        cat > release-package/manifest.json << EOF
+        cat > release-package/manifest.json << MANIFESTEOF
 {
   "releaseType": "benchmark-results",
   "generatedAt": "$(date -u -Iseconds)",
@@ -399,7 +399,7 @@ $(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sor
   "dataFiles": $TOTAL_FILES,
   "note": "This release contains only raw benchmark data. Documentation is generated during site build."
 }
-EOF
+MANIFESTEOF
         
         # Create a compressed archive
         tar -czf "benchmark-results.tar.gz" -C release-package .
