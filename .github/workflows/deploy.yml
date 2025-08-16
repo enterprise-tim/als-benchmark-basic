@@ -178,12 +178,36 @@ jobs:
           if [ -d "docs" ] && [ "$(ls -A docs 2>/dev/null)" ]; then
             echo "📚 Copying documentation to build output..."
             cp -r docs dist/ 2>/dev/null || echo "Failed to copy docs, continuing..."
-            
-            # Copy generated JSON files to root of build output for website access
-            echo "📊 Copying generated JSON files to build root..."
-            cp docs/*.json dist/ 2>/dev/null || echo "Failed to copy JSON files, continuing..."
-            echo "✅ Generated JSON files copied to build root"
           fi
+          
+          # Copy generated JSON files to root of build output for website access
+          echo "📊 Copying generated JSON files to build root..."
+          if [ -f "docs/version-comparison.json" ]; then
+            cp docs/version-comparison.json dist/ 2>/dev/null || echo "Failed to copy version-comparison.json, continuing..."
+            echo "✅ version-comparison.json copied to dist/"
+          else
+            echo "⚠️  version-comparison.json not found in docs/"
+          fi
+          
+          if [ -f "docs/chart-data.json" ]; then
+            cp docs/chart-data.json dist/ 2>/dev/null || echo "Failed to copy chart-data.json, continuing..."
+            echo "✅ chart-data.json copied to dist/"
+          else
+            echo "⚠️  chart-data.json not found in docs/"
+          fi
+          
+          if [ -f "docs/detailed-results.json" ]; then
+            cp docs/detailed-results.json dist/ 2>/dev/null || echo "Failed to copy detailed-results.json, continuing..."
+            echo "✅ detailed-results.json copied to dist/"
+          else
+            echo "⚠️  detailed-results.json not found in docs/"
+          fi
+          
+          echo "✅ Generated JSON files copy process completed"
+          
+          # Verify the files are in the right place
+          echo "🔍 Verifying files in dist directory:"
+          ls -la dist/ | grep -E "\.(json|html)$" || echo "No JSON or HTML files found in dist/"
           
           # Copy only specific static files from public, excluding generated data
           if [ -d "public" ] && [ "$(ls -A public 2>/dev/null)" ]; then
