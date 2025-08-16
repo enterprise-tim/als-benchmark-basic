@@ -45,19 +45,34 @@ jobs:
             echo "Found latest benchmark release: $LATEST_RELEASE"
             
             # Download the results archive
-            curl -L -o "benchmark-results.tar.gz" "https://github.com/${{ github.repository }}/releases/download/$LATEST_RELEASE/async-node-stats-benchmark-$(echo $LATEST_RELEASE | sed 's/benchmark-results-//').tar.gz"
+            echo "Downloading from: https://github.com/${{ github.repository }}/releases/download/$LATEST_RELEASE/benchmark-results.tar.gz"
+            if curl -L -f -o "benchmark-results.tar.gz" "https://github.com/${{ github.repository }}/releases/download/$LATEST_RELEASE/benchmark-results.tar.gz"; then
+              echo "Download successful"
+              echo "Downloaded file size: $(ls -lh benchmark-results.tar.gz | awk '{print $5}')"
+              echo "File type: $(file benchmark-results.tar.gz)"
+            else
+              echo "Download failed with exit code $?"
+              echo "Checking if file exists anyway..."
+              ls -la benchmark-results.tar.gz 2>/dev/null || echo "No file created"
+            fi
             
             if [ -f "benchmark-results.tar.gz" ]; then
               echo "Downloaded benchmark results, extracting..."
-              tar -xzf benchmark-results.tar.gz
-              
-              # Copy results to the expected locations
-              if [ -d "results" ]; then
-                cp -r results/* ./results/ 2>/dev/null || true
+              if tar -xzf benchmark-results.tar.gz; then
+                echo "Extraction successful"
+              else
+                echo "Extraction failed with exit code $?"
+                echo "Attempting to view file contents to debug:"
+                head -c 100 benchmark-results.tar.gz | hexdump -C
               fi
               
-              if [ -d "docs" ]; then
-                cp -r docs/* ./docs/ 2>/dev/null || true
+              # Verify extracted contents
+              echo "Extracted archive contents:"
+              ls -la .
+              
+              if [ -d "results" ]; then
+                echo "Results directory found with contents:"
+                ls -la results/
               fi
               
               echo "Benchmark results extracted successfully"
