@@ -800,21 +800,21 @@
                         if (stats.overhead) {
                             const row = tbody.insertRow();
                             
-                            // Determine reliability status
+                            // Determine reliability status based on objective metrics
                             const cv = stats.overhead.cv_percent || 100;
                             const outliers = stats.overhead.outliers?.percentage || 100;
                             let reliabilityClass = 'status-poor';
-                            let reliabilityText = 'Poor';
+                            let reliabilityText = 'High Variability';
                             
                             if (cv < 5 && outliers < 5) {
                                 reliabilityClass = 'status-excellent';
-                                reliabilityText = 'Excellent';
+                                reliabilityText = 'Low Variability';
                             } else if (cv < 10 && outliers < 10) {
                                 reliabilityClass = 'status-good';
-                                reliabilityText = 'Good';
+                                reliabilityText = 'Moderate Variability';
                             } else if (cv < 20 && outliers < 20) {
                                 reliabilityClass = 'status-warning';
-                                reliabilityText = 'Fair';
+                                reliabilityText = 'High Variability';
                             }
 
                             row.innerHTML = `
@@ -830,6 +830,26 @@
                         }
                     });
                 });
+                
+                // Add explanation of the reliability indicators
+                const tableContainer = document.querySelector('#resultsTable').parentNode;
+                if (!tableContainer.querySelector('.reliability-explanation')) {
+                    const explanation = document.createElement('div');
+                    explanation.className = 'card reliability-explanation';
+                    explanation.style.marginTop = '1rem';
+                    explanation.innerHTML = `
+                        <h4>Understanding the Results</h4>
+                        <ul>
+                            <li><strong>Mean Overhead:</strong> Average performance impact of AsyncLocalStorage operations</li>
+                            <li><strong>Standard Deviation:</strong> Consistency of performance measurements</li>
+                            <li><strong>Confidence Interval:</strong> Statistical range where the true mean likely falls</li>
+                            <li><strong>Reliability:</strong> Based on coefficient of variation and outlier percentage - lower values indicate more consistent results</li>
+                            <li><strong>Test Count:</strong> Number of benchmark iterations performed</li>
+                        </ul>
+                        <p><strong>Note:</strong> These are objective measurements based on statistical analysis, not subjective performance ratings.</p>
+                    `;
+                    tableContainer.appendChild(explanation);
+                }
             }
 
             showError(message) {

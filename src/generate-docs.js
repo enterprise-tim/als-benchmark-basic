@@ -456,19 +456,36 @@ npm run memory-test</div>
             if (data.benchmarkResults && data.benchmarkResults.length > 0) {
                 const latest = data.benchmarkResults[data.benchmarkResults.length - 1];
                 let html = '<h3>Latest Performance Results</h3>';
-                html += '<table><thead><tr><th>Test Case</th><th>ALS Overhead</th><th>Nested Overhead</th><th>Memory Impact</th></tr></thead><tbody>';
+                html += '<p>This table shows the performance impact for the most recent Node.js version tested. Results are averaged across multiple test runs.</p>';
+                html += '<table><thead><tr><th>Test Case</th><th>Basic ALS Overhead</th><th>Nested ALS Overhead</th><th>Memory Impact</th></tr></thead><tbody>';
                 
                 for (const benchmark of latest.benchmarks) {
                     const memoryMB = (benchmark.overhead.memoryRSSBytes / 1024 / 1024).toFixed(2);
-                    html += \`<tr>
-                        <td>\${benchmark.name}</td>
-                        <td>\${benchmark.overhead.timePercent.toFixed(2)}%</td>
-                        <td>\${benchmark.overhead.nestedTimePercent.toFixed(2)}%</td>
-                        <td>\${memoryMB}MB</td>
-                    </tr>\`;
+                    const basicOverhead = benchmark.overhead.timePercent.toFixed(2);
+                    const nestedOverhead = benchmark.overhead.nestedTimePercent.toFixed(2);
+                    
+                    // Add meaningful color coding for overhead levels instead of subjective ratings
+                    const basicClass = parseFloat(basicOverhead) > 15 ? 'danger' : parseFloat(basicOverhead) > 5 ? 'warning' : 'success';
+                    const nestedClass = parseFloat(nestedOverhead) > 50 ? 'danger' : parseFloat(nestedOverhead) > 25 ? 'warning' : 'success';
+                    
+                    html += `<tr>
+                        <td>${benchmark.name}</td>
+                        <td class="${basicClass}">${basicOverhead}%</td>
+                        <td class="${nestedClass}">${nestedOverhead}%</td>
+                        <td>${memoryMB}MB</td>
+                    </tr>`;
                 }
                 
                 html += '</tbody></table>';
+                html += '<div class="card" style="margin-top: 1rem;"><h4>Understanding the Results</h4>';
+                html += '<ul>';
+                html += '<li><strong>Basic ALS Overhead:</strong> Performance impact of using AsyncLocalStorage.run() vs not using it</li>';
+                html += '<li><strong>Nested ALS Overhead:</strong> Additional impact when using nested AsyncLocalStorage contexts</li>';
+                html += '<li><strong>Memory Impact:</strong> Additional memory usage when using AsyncLocalStorage</li>';
+                html += '<li><strong>Color Coding:</strong> Green (≤5%), Orange (5-15%), Red (>15%) for basic overhead; Green (≤25%), Orange (25-50%), Red (>50%) for nested overhead</li>';
+                html += '</ul>';
+                html += '<p><strong>Note:</strong> Lower percentages indicate better performance. These are objective measurements, not subjective ratings.</p>';
+                html += '</div>';
                 document.getElementById('performance-summary').innerHTML = html;
             }
         }

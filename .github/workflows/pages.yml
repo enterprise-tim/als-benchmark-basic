@@ -51,50 +51,76 @@ jobs:
         name: version-comparison
         path: ./downloaded-artifacts
     
-    - name: Prepare site data
+    - name: Prepare benchmark data
       run: |
-        # Create docs directory and copy existing site
-        mkdir -p docs
+        echo "📊 Preparing benchmark data for site build..."
         
-        # Backup existing site files
-        cp docs/index.html docs/index.html.bak 2>/dev/null || true
-        
-        # Ensure all site files are preserved (HTML pages and markdown files are already in docs/)
+        # Create results directory structure
+        mkdir -p results/versions
         
         # Process downloaded artifacts
         if [ -d "./downloaded-artifacts" ]; then
           echo "Processing benchmark artifacts..."
           
           # Find and copy all benchmark results
-          find ./downloaded-artifacts -name "*.json" -exec cp {} docs/ \;
-          find ./downloaded-artifacts -name "*.md" -exec cp {} docs/ \;
+          find ./downloaded-artifacts -name "*.json" -exec cp {} results/ \;
           
-          # If we have version comparison data, use it
-          if [ -f "./downloaded-artifacts/version-comparison/docs/chart-data.json" ]; then
-            cp ./downloaded-artifacts/version-comparison/docs/* docs/ 2>/dev/null || true
-          fi
+          # Copy version-specific results
+          for artifact in downloaded-artifacts/*/; do
+            if [ -d "$artifact" ]; then
+              echo "Processing artifact: $artifact"
+              # Extract version from artifact name
+              version_name=$(basename "$artifact" | sed 's/benchmark-results-node-//')
+              target_dir="results/versions/node_$version_name"
+              
+              echo "Copying to: $target_dir"
+              mkdir -p "$target_dir"
+              cp -r "$artifact"/* "$target_dir/" 2>/dev/null || true
+            fi
+          done
           
           # Generate reports from the downloaded data
-          if [ -f "docs/detailed-results.json" ] || [ -f "docs/chart-data.json" ]; then
+          if [ -d "results/versions" ]; then
             echo "Found benchmark data, generating reports..."
-            node src/report-generator.js || echo "Report generator failed, using existing data"
+            npm run compare-versions || echo "Version comparison failed, continuing with build"
+            npm run generate-report || echo "Report generation failed, continuing with build"
           fi
         else
-          echo "No benchmark artifacts found, running fresh benchmarks..."
-          npm run benchmark
-          npm run memory-test
-          npm run generate-report
+          echo "No benchmark artifacts found, using existing data if available..."
         fi
         
-        # Ensure we have the main site file
+        # Ensure we have the main site files
         if [ ! -f "docs/index.html" ]; then
-          echo "Copying main site template..."
-          cp docs/index.html docs/index.html 2>/dev/null || node src/generate-docs.js
+          echo "No existing docs, will build fresh site..."
         fi
         
         # List what we have for debugging
+        echo "Final results directory contents:"
+        ls -la results/ || echo "No results directory"
         echo "Final docs directory contents:"
-        ls -la docs/
+        ls -la docs/ || echo "No docs directory"
+
+    - name: Build React application
+      run: |
+        echo "🔨 Building React application..."
+        npm run build
+        
+        echo "📁 Build output contents:"
+        ls -la dist/
+        
+        # Copy any additional data files to dist
+        if [ -d "results" ]; then
+          echo "📊 Copying benchmark results to build output..."
+          cp -r results dist/
+        fi
+        
+        if [ -d "docs" ]; then
+          echo "📚 Copying documentation to build output..."
+          cp -r docs dist/
+        fi
+        
+        echo "🎯 Final build output:"
+        ls -la dist/
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
@@ -103,7 +129,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: github-pages-build
-        path: docs/
+        path: dist/
         retention-days: 1
 
   deploy:
@@ -118,7 +144,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: github-pages-build
-        path: ./docs
+        path: ./dist
     
     - name: Setup Pages
       uses: actions/configure-pages@v4
@@ -126,7 +152,7 @@ jobs:
     - name: Upload to GitHub Pages
       uses: actions/upload-pages-artifact@v3
       with:
-        path: ./docs
+        path: ./dist
     
     - name: Deploy to GitHub Pages
       id: deployment

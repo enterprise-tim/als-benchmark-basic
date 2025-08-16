@@ -6,8 +6,10 @@
 # docs/NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md
 #
 # Usage:
-#   ./test-versions.sh           # Test all supported versions
-#   ./test-versions.sh 24.6.0    # Test a single version
+#   ./test-versions.sh                    # Test comprehensive set of versions (1 iteration)
+#   ./test-versions.sh 24.6.0             # Test a single version (1 iteration)
+#   ./test-versions.sh --iterations 5     # Test all versions with 5 iterations each
+#   ./test-versions.sh 24.6.0 --iterations 3  # Test single version with 3 iterations
 
 set -e
 
@@ -17,29 +19,135 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Node.js versions to test (loaded from centralized config)
-# To update versions, edit config/node-versions.json
-load_versions() {
-    if [ -f "scripts/get-node-versions.js" ]; then
-        # Use centralized configuration
-        mapfile -t VERSIONS < <(node scripts/get-node-versions.js list all)
-        echo -e "${GREEN}Loaded ${#VERSIONS[@]} versions from centralized config${NC}"
+# Default iterations
+ITERATIONS=1
+
+# Function to show available version sets
+show_available_sets() {
+    local config_file="config/node-versions.json"
+    
+    if [ -f "$config_file" ]; then
+        echo -e "${GREEN}Available version sets in config/node-versions.json:${NC}"
+        node -e "
+            const config = require('./config/node-versions.json');
+            Object.entries(config.sets).forEach(([key, versions]) => {
+                console.log(\`  \${key}: \${versions.length} versions\`);
+            });
+        "
+        echo ""
+        echo "To use a different set, modify the load_versions() function in this script."
+        echo "Current default: comprehensive set"
     else
-        # Fallback to hardcoded versions if config script is not available
-        VERSIONS=(
-            "16.20.2"   # LTS - First version with AsyncLocalStorage stable
-            "18.19.1"   # LTS - Performance improvements
-            "20.11.0"   # LTS - Latest stable
-            "21.7.3"    # Current - Latest features
-            "22.18.0"   # Latest 22.x - Latest stable in 22.x series
-            "24.6.0"    # Latest LTS - Most recent
-        )
-        echo -e "${YELLOW}Using fallback hardcoded versions${NC}"
+        echo -e "${YELLOW}Config file not found. Using fallback versions.${NC}"
     fi
 }
 
-# Load versions at startup
-load_versions
+# Parse command line arguments
+parse_arguments() {
+    local args=()
+    local iterations_arg=""
+    
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --iterations)
+                if [[ -n "$2" && "$2" =~ ^[0-9]+$ ]]; then
+                    ITERATIONS="$2"
+                    shift 2
+                else
+                    echo -e "${RED}Error: --iterations requires a positive integer${NC}"
+                    exit 1
+                fi
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            -*)
+                echo -e "${RED}Error: Unknown option $1${NC}"
+                show_help
+                exit 1
+                ;;
+            *)
+                args+=("$1")
+                shift
+                ;;
+        esac
+    done
+    
+    # Restore positional arguments
+    set -- "${args[@]}"
+}
+
+# Show help information
+show_help() {
+    echo "Usage: $0 [version] [--iterations N] [--help]"
+    echo ""
+    echo "Options:"
+    echo "  [version]           Test a specific Node.js version (e.g., 24.6.0)"
+    echo "  --iterations N      Run N iterations of each version (default: 1)"
+    echo "  --help, -h          Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0                           # Test all versions from config (1 iteration)"
+    echo "  $0 24.6.0                   # Test only Node.js 24.6.0 (1 iteration)"
+    echo "  $0 --iterations 5           # Test all versions with 5 iterations each"
+    echo "  $0 24.6.0 --iterations 3   # Test Node.js 24.6.0 with 3 iterations"
+    echo "  $0 --help                    # Show this help"
+    echo ""
+    echo "Available version sets in config/node-versions.json:"
+    if [ -f "config/node-versions.json" ]; then
+        node -e "
+            const config = require('./config/node-versions.json');
+            Object.entries(config.sets).forEach(([key, versions]) => {
+                console.log(\`  \${key}: \${versions.length} versions\`);
+            });
+        "
+        echo ""
+        echo "Current default: comprehensive set"
+    else
+        echo "  Config file not found"
+    fi
+}
+
+# Node.js versions to test (loaded from centralized config)
+# To update versions, edit config/node-versions.json
+load_versions() {
+    local config_file="config/node-versions.json"
+    
+    if [ -f "$config_file" ]; then
+        # Use centralized configuration from config/node-versions.json
+        echo -e "${GREEN}Loading versions from centralized config using Node.js...${NC}"
+        
+        # Use Node.js to read the config file and output versions
+        VERSIONS=($(node -e "
+            const config = require('./config/node-versions.json');
+            const versions = config.sets.comprehensive.map(key => config.versions[key].exact);
+            console.log(versions.join(' '));
+        "))
+        
+        echo -e "${GREEN}Loaded ${#VERSIONS[@]} versions from centralized config (comprehensive set)${NC}"
+        echo "Versions to test: ${VERSIONS[*]}"
+    else
+        # Fallback to hardcoded versions if config file is not available
+        echo -e "${YELLOW}Warning: config/node-versions.json not found, using fallback versions${NC}"
+        VERSIONS=(
+            "16.20.2"   # LTS - First version with AsyncLocalStorage stable
+            "18.19.1"   # LTS - Performance improvements and debugger context loss fixes
+            "20.0.0"    # LTS - First 20.x release
+            "20.11.0"   # LTS - Enhanced async context handling and nested context fixes
+            "21.0.0"    # Current - First 21.x release
+            "21.7.3"    # Current - Continued optimization for high-concurrency scenarios
+            "22.0.0"    # Latest - Foundation for major performance overhaul
+            "22.18.0"   # Latest 22.x - Latest stable in 22.x series
+            "23.0.0"    # Current - First 23.x release
+            "24.0.0"    # Latest LTS - First 24.x release with AsyncContextFrame
+            "24.6.0"    # Latest LTS - Revolutionary AsyncContextFrame implementation
+        )
+        echo -e "${YELLOW}Using fallback hardcoded versions (${#VERSIONS[@]} versions)${NC}"
+    fi
+}
+
+# Load versions will be called after help check
 
 # Node.js Performance Tuning Configuration
 # These settings ensure consistent and optimal performance testing across versions
@@ -126,13 +234,22 @@ if ! type nvm &> /dev/null; then
     exit 1
 fi
 
+# Check if bc is available for statistics calculations
+if ! command -v bc &> /dev/null; then
+    echo -e "${YELLOW}Warning: bc not available. Statistics will use basic integer math.${NC}"
+    echo "For better statistical analysis, install bc: brew install bc (macOS) or apt-get install bc (Ubuntu)"
+    echo ""
+fi
+
 # Create results directory
 mkdir -p results/versions
 
 # Function to test a specific Node.js version
 test_version() {
     local version=$1
-    echo -e "${YELLOW}Testing Node.js $version${NC}"
+    local iteration=$2
+    
+    echo -e "${YELLOW}Testing Node.js $version (Iteration $iteration)${NC}"
     echo "----------------------------------------"
     
     # Install and use the specified version
@@ -149,25 +266,76 @@ test_version() {
         npm install
     fi
     
-    # Create version-specific results directory
-    mkdir -p "results/versions/node_$version"
+    # Create version-specific results directory with iteration subdirectory
+    local results_dir="results/versions/node_$version"
+    if [ $ITERATIONS -gt 1 ]; then
+        results_dir="$results_dir/iteration_$iteration"
+    fi
+    mkdir -p "$results_dir"
     
     # Run benchmarks with optimized flags
     echo "Running performance benchmarks with optimized Node.js flags..."
     local benchmark_flags=$(get_benchmark_node_flags)
-    node $benchmark_flags src/benchmark.js 2>&1 | tee "results/versions/node_$version/benchmark.log"
+    node $benchmark_flags src/benchmark.js 2>&1 | tee "$results_dir/benchmark.log"
     
     # Run memory tests with memory-specific flags
     echo "Running memory tests with memory profiling flags..."
     local memory_flags=$(get_memory_test_node_flags)
-    node $memory_flags src/memory-test.js 2>&1 | tee "results/versions/node_$version/memory.log"
+    node $memory_flags src/memory-test.js 2>&1 | tee "$results_dir/memory.log"
     
     # Move result files to version-specific directory
-    mv results/benchmark_*.json "results/versions/node_$version/" 2>/dev/null || true
-    mv results/memory_*.json "results/versions/node_$version/" 2>/dev/null || true
+    mv results/benchmark_*.json "$results_dir/" 2>/dev/null || true
+    mv results/memory_*.json "$results_dir/" 2>/dev/null || true
     
-    echo -e "${GREEN}Completed testing Node.js $version${NC}"
+    echo -e "${GREEN}Completed testing Node.js $version (Iteration $iteration)${NC}"
     echo ""
+}
+
+# Function to calculate basic statistics from a list of numbers
+calculate_stats() {
+    local numbers=("$@")
+    local count=${#numbers[@]}
+    
+    if [ $count -eq 0 ]; then
+        echo "0,0,0,0,0"  # count, mean, stddev, min, max
+        return
+    fi
+    
+    # Calculate sum and min/max
+    local sum=0
+    local min=${numbers[0]}
+    local max=${numbers[0]}
+    
+    for num in "${numbers[@]}"; do
+        sum=$(echo "$sum + $num" | bc -l)
+        if (( $(echo "$num < $min" | bc -l) )); then
+            min=$num
+        fi
+        if (( $(echo "$num > $max" | bc -l) )); then
+            max=$num
+        fi
+    done
+    
+    # Calculate mean
+    local mean=$(echo "scale=6; $sum / $count" | bc -l)
+    
+    # Calculate standard deviation
+    local variance_sum=0
+    for num in "${numbers[@]}"; do
+        local diff=$(echo "$num - $mean" | bc -l)
+        local diff_squared=$(echo "$diff * $diff" | bc -l)
+        variance_sum=$(echo "$variance_sum + $diff_squared" | bc -l)
+    done
+    local variance=$(echo "scale=6; $variance_sum / $count" | bc -l)
+    local stddev=$(echo "scale=6; sqrt($variance)" | bc -l)
+    
+    # Calculate coefficient of variation
+    local cv=0
+    if (( $(echo "$mean != 0" | bc -l) )); then
+        cv=$(echo "scale=6; $stddev / $mean * 100" | bc -l)
+    fi
+    
+    echo "$count,$mean,$stddev,$min,$max,$cv"
 }
 
 # Function to generate comparison report
@@ -179,6 +347,7 @@ generate_report() {
 # AsyncLocalStorage Performance Comparison Across Node.js Versions
 
 Generated on: $(date)
+Iterations per version: $ITERATIONS
 
 ## Tested Versions
 EOF
@@ -197,6 +366,24 @@ Each version was tested with the same benchmark suite including:
 - Concurrent operation testing
 - Memory leak detection
 
+EOF
+
+    if [ $ITERATIONS -gt 1 ]; then
+        cat >> results/versions/SUMMARY.md << EOF
+
+### Statistical Summary (Across $ITERATIONS Iterations)
+
+This section provides statistical analysis across multiple runs for each version:
+- **Mean**: Average performance across all iterations
+- **Standard Deviation**: Measure of consistency/variability
+- **Min/Max**: Best and worst performance observed
+- **Coefficient of Variation**: Relative variability (lower is better)
+
+EOF
+    fi
+
+    cat >> results/versions/SUMMARY.md << EOF
+
 ### Performance Summary
 
 EOF
@@ -208,21 +395,52 @@ EOF
             echo "#### Node.js $version" >> results/versions/SUMMARY.md
             echo "" >> results/versions/SUMMARY.md
             
-            # Try to extract summary from log files
-            if [ -f "$version_dir/benchmark.log" ]; then
-                echo "**Benchmark Results:**" >> results/versions/SUMMARY.md
-                echo '```' >> results/versions/SUMMARY.md
-                grep -A 10 "SUMMARY" "$version_dir/benchmark.log" | tail -n +2 >> results/versions/SUMMARY.md || echo "No summary found" >> results/versions/SUMMARY.md
-                echo '```' >> results/versions/SUMMARY.md
+            if [ $ITERATIONS -gt 1 ]; then
+                echo "**Results across $ITERATIONS iterations:**" >> results/versions/SUMMARY.md
                 echo "" >> results/versions/SUMMARY.md
-            fi
-            
-            if [ -f "$version_dir/memory.log" ]; then
-                echo "**Memory Results:**" >> results/versions/SUMMARY.md
-                echo '```' >> results/versions/SUMMARY.md
-                grep -A 10 "MEMORY PROFILING SUMMARY" "$version_dir/memory.log" | tail -n +2 >> results/versions/SUMMARY.md || echo "No memory summary found" >> results/versions/SUMMARY.md
-                echo '```' >> results/versions/SUMMARY.md
-                echo "" >> results/versions/SUMMARY.md
+                
+                # Process each iteration
+                for i in $(seq 1 $ITERATIONS); do
+                    local iteration_dir="$version_dir/iteration_$i"
+                    if [ -d "$iteration_dir" ]; then
+                        echo "**Iteration $i:**" >> results/versions/SUMMARY.md
+                        
+                        # Try to extract summary from log files
+                        if [ -f "$iteration_dir/benchmark.log" ]; then
+                            echo "Benchmark Results:" >> results/versions/SUMMARY.md
+                            echo '```' >> results/versions/SUMMARY.md
+                            grep -A 10 "SUMMARY" "$iteration_dir/benchmark.log" | tail -n +2 >> results/versions/SUMMARY.md || echo "No summary found" >> results/versions/SUMMARY.md
+                            echo '```' >> results/versions/SUMMARY.md
+                            echo "" >> results/versions/SUMMARY.md
+                        fi
+                        
+                        if [ -f "$iteration_dir/memory.log" ]; then
+                            echo "Memory Results:" >> results/versions/SUMMARY.md
+                            echo '```' >> results/versions/SUMMARY.md
+                            grep -A 10 "MEMORY PROFILING SUMMARY" "$iteration_dir/memory.log" | tail -n +2 >> results/versions/SUMMARY.md || echo "No memory summary found" >> results/versions/SUMMARY.md
+                            echo '```' >> results/versions/SUMMARY.md
+                            echo "" >> results/versions/SUMMARY.md
+                        fi
+                    fi
+                done
+            else
+                # Single iteration mode - use old logic
+                # Try to extract summary from log files
+                if [ -f "$version_dir/benchmark.log" ]; then
+                    echo "**Benchmark Results:**" >> results/versions/SUMMARY.md
+                    echo '```' >> results/versions/SUMMARY.md
+                    grep -A 10 "SUMMARY" "$version_dir/benchmark.log" | tail -n +2 >> results/versions/SUMMARY.md || echo "No summary found" >> results/versions/SUMMARY.md
+                    echo '```' >> results/versions/SUMMARY.md
+                    echo "" >> results/versions/SUMMARY.md
+                fi
+                
+                if [ -f "$version_dir/memory.log" ]; then
+                    echo "**Memory Results:**" >> results/versions/SUMMARY.md
+                    echo '```' >> results/versions/SUMMARY.md
+                    grep -A 10 "MEMORY PROFILING SUMMARY" "$version_dir/memory.log" | tail -n +2 >> results/versions/SUMMARY.md || echo "No memory summary found" >> results/versions/SUMMARY.md
+                    echo '```' >> results/versions/SUMMARY.md
+                    echo "" >> results/versions/SUMMARY.md
+                fi
             fi
         fi
     done
@@ -271,13 +489,23 @@ All raw test data is available in the version-specific directories:
 EOF
 
     for version in "${VERSIONS[@]}"; do
-        echo "- \`results/versions/node_$version/\`" >> results/versions/SUMMARY.md
+        if [ $ITERATIONS -gt 1 ]; then
+            echo "- \`results/versions/node_$version/\` (contains iteration subdirectories)" >> results/versions/SUMMARY.md
+        else
+            echo "- \`results/versions/node_$version/\`" >> results/versions/SUMMARY.md
+        fi
     done
 
     echo -e "${GREEN}Comparison report generated: results/versions/SUMMARY.md${NC}"
 }
 
 # Main execution
+# Parse command line arguments first
+parse_arguments "$@"
+
+# Load versions after help check
+load_versions
+
 if [ $# -eq 1 ]; then
     # Single version mode
     SINGLE_VERSION="$1"
@@ -289,6 +517,8 @@ if [ $# -eq 1 ]; then
     else
         echo -e "${RED}Error: Version $SINGLE_VERSION is not in the supported versions list.${NC}"
         echo "Supported versions: ${VERSIONS[*]}"
+        echo ""
+        show_available_sets
         exit 1
     fi
 else
@@ -316,11 +546,15 @@ original_version=$(node --version 2>/dev/null || echo "none")
 
 # Test each version
 for version in "${VERSIONS_TO_TEST[@]}"; do
-    if test_version "$version"; then
-        echo -e "${GREEN}✓ Node.js $version completed successfully${NC}"
-    else
-        echo -e "${RED}✗ Node.js $version failed${NC}"
-    fi
+    echo -e "${YELLOW}Running $ITERATIONS iterations for Node.js $version...${NC}"
+    for i in $(seq 1 $ITERATIONS); do
+        echo -e "${YELLOW}Iteration $i of $version${NC}"
+        if test_version "$version" "$i"; then
+            echo -e "${GREEN}✓ Node.js $version iteration $i completed successfully${NC}"
+        else
+            echo -e "${RED}✗ Node.js $version iteration $i failed${NC}"
+        fi
+    done
 done
 
 # Generate comparison report
@@ -337,5 +571,8 @@ cleanup_performance_tuning
 
 echo ""
 echo -e "${GREEN}All tests completed!${NC}"
+if [ $ITERATIONS -gt 1 ]; then
+    echo "Each version was tested $ITERATIONS times for statistical reliability"
+fi
 echo "Results are available in the 'results/versions/' directory"
 echo "Summary report: results/versions/SUMMARY.md"

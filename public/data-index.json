@@ -1,0 +1,49 @@
+{
+  "versions": {
+    "16.20.2": {
+      "benchmark": "benchmark_v16_20_2_1755282128371.json",
+      "memory": "memory_v16_20_2_1755283972331.json"
+    },
+    "18.19.1": {
+      "benchmark": "benchmark_v18_19_1_1755282128371.json",
+      "memory": "memory_v18_19_1_1755283972331.json"
+    },
+    "20.0.0": {
+      "benchmark": "benchmark_v20_0_0_1755352092232.json",
+      "memory": "memory_v20_0_0_1755352116511.json"
+    },
+    "20.11.0": {
+      "benchmark": "benchmark_v20_11_0_1755282207134.json",
+      "memory": "memory_v20_11_0_1755284049178.json"
+    },
+    "21.0.0": {
+      "benchmark": "benchmark_v21_0_0_1755352250054.json",
+      "memory": "memory_v21_0_0_1755352272312.json"
+    },
+    "21.7.3": {
+      "benchmark": "benchmark_v21_7_3_1755282285062.json",
+      "memory": "memory_v21_7_3_1755284123217.json"
+    },
+    "22.0.0": {
+      "benchmark": "benchmark_v22_0_0_1755282370635.json",
+      "memory": "memory_v22_0_0_1755284198440.json"
+    },
+    "22.18.0": {
+      "benchmark": "benchmark_v22_18_0_1755352491956.json",
+      "memory": "memory_v22_18_0_1755352514642.json"
+    },
+    "23.0.0": {
+      "benchmark": "benchmark_v23_0_0_1755352568557.json",
+      "memory": "memory_v23_0_0_1755352591575.json"
+    },
+    "24.0.0": {
+      "benchmark": "benchmark_v24_0_0_1755352642980.json",
+      "memory": "memory_v24_0_0_1755352667446.json"
+    },
+    "24.6.0": {
+      "benchmark": "benchmark_v24_6_0_1755352715978.json",
+      "memory": "memory_v24_6_0_1755352739076.json"
+    }
+  },
+  "lastUpdated": "2025-08-16T00:00:00.000Z"
+}

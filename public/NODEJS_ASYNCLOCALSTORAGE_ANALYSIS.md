@@ -1,35 +1,6 @@
 # AsyncLocalStorage Changes Analysis Across Node.js Versions
 
-This document provides a comprehensive analysis of AsyncLocalStorage changes across the Node.js versions tested in our benchmark suite, including code-level modifications and links to relevant files in the Node.js repository.
-
-## Version Testing Strategy
-
-This project now provides **two complementary testing approaches**:
-
-### 1. **Key Milestone Versions (Analysis Focus)**
-The following **6 versions** represent the core evolution of AsyncLocalStorage and are the primary focus of this analysis:
-
-- **Node.js v16.20.2** (LTS) - First version with AsyncLocalStorage stable
-- **Node.js v18.19.1** (LTS) - Performance improvements and debugger context loss fixes
-- **Node.js v20.11.0** (LTS) - Enhanced async context handling and nested context fixes
-- **Node.js v21.7.3** (Current) - Continued optimization for high-concurrency scenarios
-- **Node.js v22.0.0** (Latest) - Foundation for major performance overhaul
-- **Node.js v24.6.0** (Latest LTS) - Revolutionary AsyncContextFrame implementation
-
-### 2. **Comprehensive Coverage (Full Testing)**
-For thorough validation, the project also tests **11 total versions** including early releases:
-
-- **Early Release Versions**: v20.0.0, v21.0.0, v22.18.0, v23.0.0, v24.0.0
-- **Purpose**: Granular testing, feature introduction timing, regression detection
-- **Benefits**: Version-to-version comparison within major version series
-
-### Version Sets Available
-- **`analysis_versions`**: Key milestone versions for focused research
-- **`comprehensive`**: All 11 versions for thorough testing
-- **`early_releases`**: First releases in major version series
-- **`lts_only`**: Only LTS versions for enterprise testing
-
-For detailed information about the comprehensive strategy, see [COMPREHENSIVE_VERSION_STRATEGY.md](./COMPREHENSIVE_VERSION_STRATEGY.md).
+This document provides a comprehensive analysis of AsyncLocalStorage changes across the Node.js versions tested in `test-versions.sh`, including code-level modifications and links to relevant files in the Node.js repository.
 
 ## Overview
 
@@ -259,40 +230,6 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
 - Better performance scaling under high concurrency
 - More consistent behavior across different async operation types
 - Potential breaking changes requiring testing with existing AsyncResource usage patterns
-
-## Comprehensive Testing Strategy
-
-This project now provides a **dual testing approach** that combines focused analysis with comprehensive coverage:
-
-### Key Milestone Testing (6 versions)
-The versions analyzed in this document represent the core evolution of AsyncLocalStorage:
-- **Focused Research**: Each version addresses specific critical issues
-- **Performance Evolution**: Clear progression from baseline to revolutionary improvements
-- **Issue Correlation**: Direct links to GitHub issues and their resolutions
-
-### Comprehensive Coverage (11 versions)
-For thorough validation, the project also tests additional versions:
-- **Early Releases**: v20.0.0, v21.0.0, v22.18.0, v23.0.0, v24.0.0
-- **Granular Testing**: Version-to-version comparison within major version series
-- **Regression Detection**: Performance changes across different release patterns
-- **Feature Introduction**: Identify when specific improvements were added
-
-### Available Version Sets
-- **`analysis_versions`**: Key milestone versions for focused research (this document)
-- **`comprehensive`**: All 11 versions for thorough testing
-- **`early_releases`**: First releases in major version series
-- **`lts_only`**: Only LTS versions for enterprise testing
-
-### Benefits of This Approach
-1. **Research Focus**: Key milestone versions provide clear performance story
-2. **Quality Assurance**: Comprehensive coverage validates focused findings
-3. **Flexible Testing**: Choose appropriate version set for your needs
-4. **Production Ready**: Test across full Node.js ecosystem
-
-For detailed information about the comprehensive testing strategy, see:
-- [COMPREHENSIVE_VERSION_STRATEGY.md](./COMPREHENSIVE_VERSION_STRATEGY.md) - Complete strategy guide
-- [VERSION_CORRELATION.md](./VERSION_CORRELATION.md) - Version mapping and correlation
-- [BENCHMARK_TYPES.md](./BENCHMARK_TYPES.md) - Benchmark documentation
 
 ## References
 

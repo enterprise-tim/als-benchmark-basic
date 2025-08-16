@@ -10,21 +10,42 @@
     "18": {
       "exact": "18.19.1", 
       "major": "18",
-      "description": "LTS - Performance improvements",
+      "description": "LTS - Performance improvements and debugger context loss fixes",
+      "lts": true,
+      "active": true
+    },
+    "20_early": {
+      "exact": "20.0.0",
+      "major": "20",
+      "description": "LTS - First 20.x release",
       "lts": true,
       "active": true
     },
     "20": {
       "exact": "20.11.0",
       "major": "20", 
-      "description": "LTS - Latest stable",
+      "description": "LTS - Enhanced async context handling and nested context fixes",
       "lts": true,
+      "active": true
+    },
+    "21_early": {
+      "exact": "21.0.0",
+      "major": "21",
+      "description": "Current - First 21.x release",
+      "lts": false,
       "active": true
     },
     "21": {
       "exact": "21.7.3",
       "major": "21",
-      "description": "Current - Latest features", 
+      "description": "Current - Continued optimization for high-concurrency scenarios", 
+      "lts": false,
+      "active": true
+    },
+    "22_early": {
+      "exact": "22.0.0",
+      "major": "22",
+      "description": "Latest - Foundation for major performance overhaul",
       "lts": false,
       "active": true
     },
@@ -35,20 +56,40 @@
       "lts": false,
       "active": true
     },
+    "23": {
+      "exact": "23.0.0",
+      "major": "23",
+      "description": "Current - First 23.x release",
+      "lts": false,
+      "active": true
+    },
+    "24_early": {
+      "exact": "24.0.0",
+      "major": "24",
+      "description": "Latest LTS - First 24.x release with AsyncContextFrame",
+      "lts": true,
+      "active": true
+    },
     "24": {
       "exact": "24.6.0",
       "major": "24",
-      "description": "Latest LTS - Most recent",
+      "description": "Latest LTS - Revolutionary AsyncContextFrame implementation",
       "lts": true,
       "active": true
     }
   },
   "sets": {
-    "all": ["16", "18", "20", "21", "22", "24"],
-    "lts_only": ["16", "18", "20", "24"],
-    "current_and_lts": ["18", "20", "22", "24"],
-    "enterprise": ["18", "20", "22", "24"],
-    "basic": ["16", "18", "20", "22"]
+    "all": ["16", "18", "20_early", "20", "21_early", "21", "22_early", "22", "23", "24_early", "24"],
+    "lts_only": ["16", "18", "20_early", "20", "24_early", "24"],
+    "current_and_lts": ["18", "20_early", "20", "22_early", "22", "23", "24_early", "24"],
+    "enterprise": ["18", "20_early", "20", "22_early", "22", "24_early", "24"],
+    "basic": ["16", "18", "20", "22", "24"],
+    "comprehensive": ["16", "18", "20_early", "20", "21_early", "21", "22_early", "22", "23", "24_early", "24"],
+    "recent_only": ["20", "21", "22", "23", "24"],
+    "early_releases": ["20_early", "21_early", "22_early", "24_early"],
+    "analysis_versions": ["16", "18", "20", "21", "22_early", "24"],
+    "key_milestones": ["16", "18", "20", "21", "22", "24"],
+    "performance_evolution": ["16", "18", "20", "21", "22", "24"]
   },
   "docker": {
     "default_version": "22",
@@ -56,6 +97,20 @@
   },
   "metadata": {
     "last_updated": "2025-01-15",
-    "update_source": "https://nodejs.org/dist/index.json"
+    "update_source": "NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md + Original comprehensive coverage",
+    "notes": "Expanded to include comprehensive version coverage while maintaining focus on key AsyncLocalStorage evolution versions. Includes early releases for granular testing and key milestone versions for focused analysis.",
+    "analysis_document": "docs/NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md",
+    "key_issues": [
+      "https://github.com/nodejs/node/issues/43148 - Debugger context loss fix in v18",
+      "https://github.com/nodejs/node/issues/45848 - Nested async context propagation in v20", 
+      "https://github.com/nodejs/node/issues/34493 - 97% performance degradation issue",
+      "https://github.com/nodejs/node/issues/58204 - AsyncResource behavior changes in v24",
+      "https://github.com/nodejs/node/pull/55552 - AsyncContextFrame implementation in v24"
+    ],
+    "version_categories": {
+      "analysis_focus": "Key versions analyzed in AsyncLocalStorage analysis (16, 18, 20, 21, 22, 24)",
+      "early_releases": "First releases in major version series for testing granularity",
+      "comprehensive_coverage": "Full coverage across all major Node.js versions for thorough testing"
+    }
   }
 }

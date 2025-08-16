@@ -10,10 +10,11 @@ on:
     - cron: '0 2 * * 0'
   workflow_dispatch:
     inputs:
-      node_versions:
-        description: 'Node.js versions to test (comma-separated)'
+      iterations:
+        description: 'Number of iterations per version (default: 10)'
         required: false
-        default: '16.20.2,18.19.1,20.11.0,22.18.0'
+        default: '10'
+        type: number
       run_memory_tests:
         description: 'Run memory profiling tests'
         required: false
@@ -21,11 +22,56 @@ on:
         type: boolean
 
 jobs:
+  setup-versions:
+    runs-on: ubuntu-latest-4-cores
+    outputs:
+      node-versions: ${{ steps.get-versions.outputs.versions }}
+      version-count: ${{ steps.get-versions.outputs.count }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Get configured Node.js versions
+      id: get-versions
+      run: |
+        # Extract all active versions from node-versions.json
+        VERSIONS=$(node -e "
+          const config = JSON.parse(require('fs').readFileSync('config/node-versions.json', 'utf8'));
+          const activeVersions = Object.entries(config.versions)
+            .filter(([key, version]) => version.active)
+            .map(([key, version]) => version.exact)
+            .sort((a, b) => {
+              const aParts = a.split('.').map(Number);
+              const bParts = b.split('.').map(Number);
+              for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+                const aPart = aParts[i] || 0;
+                const bPart = bParts[i] || 0;
+                if (aPart !== bPart) return aPart - bPart;
+              }
+              return 0;
+            });
+          console.log('::set-output name=versions::' + activeVersions.join(','));
+          console.log('::set-output name=count::' + activeVersions.length);
+        ")
+        echo "Found ${{ steps.get-versions.outputs.count }} Node.js versions to test"
+        echo "Versions: ${{ steps.get-versions.outputs.node-versions }}"
+
   benchmark:
     runs-on: ubuntu-latest-4-cores
+    needs: setup-versions
     strategy:
       matrix:
-        node-version: [16.x, 18.x, 20.x, 22.x, 24.x]
+        node-version: ${{ fromJson(format('[{0}]', needs.setup-versions.outputs.node-versions)) }}
       fail-fast: false
     
     steps:
@@ -41,37 +87,39 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Run benchmark tests
+    - name: Verify Node.js version
       run: |
-        echo "Node.js version: $(node --version)"
-        echo "npm version: $(npm --version)"
-        # Run the original benchmark for baseline comparison
-        npm run benchmark
-        
-    - name: Run distributed benchmark tests
-      run: |
-        echo "Running comprehensive distributed benchmark tests..."
-        # Run the new distributed benchmark with enhanced ALS testing
-        npm run benchmark-distributed
-        
-    - name: Run comprehensive benchmark matrix
-      run: |
-        echo "Running full benchmark matrix with all execution modes..."
-        # Run the full test matrix for comprehensive analysis
-        npm run benchmark-full
+        echo "Expected Node.js version: ${{ matrix.node-version }}"
+        echo "Actual Node.js version: $(node --version)"
+        if [ "$(node --version)" != "v${{ matrix.node-version }}" ]; then
+          echo "❌ Node.js version mismatch!"
+          exit 1
+        fi
+        echo "✅ Node.js version verified"
     
+    - name: Run multi-iteration benchmarks
+      run: |
+        echo "🚀 Running ${{ github.event.inputs.iterations || 10 }} iterations for Node.js ${{ matrix.node-version }}"
+        npm run multi-iteration ${{ github.event.inputs.iterations || 10 }}
+        
     - name: Run memory profiling tests
       if: ${{ github.event.inputs.run_memory_tests != 'false' }}
       run: |
+        echo "🧠 Running memory tests for Node.js ${{ matrix.node-version }}"
         node --expose-gc src/memory-test.js
+        
+        # Copy memory results to version directory
+        if [ -d "results/versions/node_${{ matrix.node-version }}" ]; then
+          mkdir -p "results/versions/node_${{ matrix.node-version }}/memory"
+          find results -name "memory_*.json" -exec cp {} "results/versions/node_${{ matrix.node-version }}/memory/" \;
+        fi
     
     - name: Upload benchmark results
       uses: actions/upload-artifact@v4
       with:
         name: benchmark-results-node-${{ matrix.node-version }}
         path: |
-          results/
-          !results/versions/
+          results/versions/node_${{ matrix.node-version }}/
         retention-days: 30
     
     - name: Generate performance summary
@@ -79,27 +127,27 @@ jobs:
         echo "## Performance Summary for Node.js ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        # Find the latest benchmark result
-        LATEST_BENCHMARK=$(ls -t results/benchmark_*.json | head -1)
-        if [ -f "$LATEST_BENCHMARK" ]; then
+        VERSION_DIR="results/versions/node_${{ matrix.node-version }}"
+        if [ -d "$VERSION_DIR" ]; then
           echo "### Benchmark Results" >> $GITHUB_STEP_SUMMARY
-          echo '```json' >> $GITHUB_STEP_SUMMARY
-          jq '.benchmarks[] | {name: .name, overhead: .overhead.timePercent, memoryOverhead: .overhead.memoryRSSBytes}' "$LATEST_BENCHMARK" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        # Find the latest memory result
-        LATEST_MEMORY=$(ls -t results/memory_*.json | head -1)
-        if [ -f "$LATEST_MEMORY" ]; then
-          echo "### Memory Analysis" >> $GITHUB_STEP_SUMMARY
-          echo '```json' >> $GITHUB_STEP_SUMMARY
-          jq '.memoryLeakTest.analysis // "No memory leak test results"' "$LATEST_MEMORY" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "**Iterations completed:** $(find $VERSION_DIR -name "iteration_*" -type d | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "**Total duration:** $(find $VERSION_DIR -name "iteration-summary.json" -exec jq -r '.summary.averageDuration // "N/A"' {} \;)" >> $GITHUB_STEP_SUMMARY
+          
+          # Show iteration summary if available
+          if [ -f "$VERSION_DIR/iteration-summary.json" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Iteration Summary:**" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            jq '.summary' "$VERSION_DIR/iteration-summary.json" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "⚠️ No results directory found for this version" >> $GITHUB_STEP_SUMMARY
         fi
 
   compare-versions:
     runs-on: ubuntu-latest-4-cores
-    needs: benchmark
+    needs: [benchmark, setup-versions]
     if: always()
     
     steps:
@@ -120,32 +168,59 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Generate comparison report
+    - name: Prepare results directory
       run: |
-        mkdir -p results/comparison
+        mkdir -p results/versions
         
-        # Merge all results
-        for dir in downloaded-results/*/; do
-          if [ -d "$dir" ]; then
-            cp -r "$dir"/* results/comparison/ 2>/dev/null || true
+        # Copy all downloaded results to the results directory
+        for artifact in downloaded-results/*/; do
+          if [ -d "$artifact" ]; then
+            echo "Processing artifact: $artifact"
+            # Extract version from artifact name
+            version_name=$(basename "$artifact" | sed 's/benchmark-results-node-//')
+            target_dir="results/versions/node_$version_name"
+            
+            echo "Copying to: $target_dir"
+            cp -r "$artifact"/* "$target_dir/" 2>/dev/null || true
+            
+            # Ensure proper structure
+            if [ ! -d "$target_dir" ]; then
+              mkdir -p "$target_dir"
+            fi
           fi
         done
         
-        # Generate comparison
-        node src/report-generator.js
+        echo "Final results structure:"
+        find results/versions -type d | head -20
+    
+    - name: Generate version comparison report
+      run: |
+        echo "🔍 Generating comprehensive version comparison report..."
+        npm run compare-versions
+        
+        echo "📊 Comparison report generated"
+        ls -la docs/
+    
+    - name: Generate additional reports
+      run: |
+        echo "📝 Generating additional performance reports..."
+        npm run generate-report
+        
+        echo "📈 All reports generated"
+        ls -la docs/
     
     - name: Upload comparison results
       uses: actions/upload-artifact@v4
       with:
         name: version-comparison
         path: |
-          results/comparison/
+          results/
           docs/
         retention-days: 30
 
   performance-regression:
     runs-on: ubuntu-latest-4-cores
-    needs: benchmark
+    needs: [benchmark, setup-versions]
     if: github.event_name == 'pull_request'
     
     steps:
@@ -155,7 +230,7 @@ jobs:
     - name: Download benchmark results
       uses: actions/download-artifact@v4
       with:
-        name: benchmark-results-node-20.x
+        name: benchmark-results-node-20.11.0
         path: ./pr-results
     
     - name: Checkout main branch
@@ -167,7 +242,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20.x'
+        node-version: '20.11.0'
         cache: 'npm'
     
     - name: Run baseline benchmark (main branch)
@@ -180,7 +255,6 @@ jobs:
     
     - name: Compare performance
       run: |
-        # This is a simplified comparison - in a real scenario you'd want more sophisticated analysis
         echo "## Performance Regression Analysis" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         

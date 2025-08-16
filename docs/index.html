@@ -7,13 +7,25 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary-color: #007bff;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
-            --light-bg: #f8f9fa;
-            --border-color: #e9ecef;
-            --info-color: #17a2b8;
+            /* Material Design 3 Color Tokens */
+            --primary-color: #6750a4;
+            --primary-container: #e8def8;
+            --on-primary: #ffffff;
+            --on-primary-container: #21005e;
+            --secondary: #625b71;
+            --secondary-container: #e8def8;
+            --on-secondary: #ffffff;
+            --on-secondary-container: #1d192b;
+            --surface: #fffbfe;
+            --surface-container: #f3edf7;
+            --on-surface: #1c1b1f;
+            --on-surface-variant: #49454f;
+            --outline: #79747e;
+            --outline-variant: #cac4d0;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --info-color: #2196f3;
         }
         
         * {
@@ -36,10 +48,11 @@
         }
         
         header {
-            background: linear-gradient(135deg, var(--primary-color), #0056b3);
-            color: white;
-            padding: 2rem 0;
+            background: var(--surface);
+            color: var(--on-surface);
+            padding: 3rem 0;
             text-align: center;
+            border-bottom: 1px solid var(--outline-variant);
         }
         
         h1 {
@@ -52,20 +65,106 @@
             opacity: 0.9;
         }
         
-        nav {
-            background: var(--light-bg);
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--border-color);
+        /* Material Design 3 Navigation */
+        .top-nav {
+            background: #fff;
+            box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.30);
             position: sticky;
             top: 0;
             z-index: 100;
         }
         
-        .nav-links {
+        .top-nav .container {
             display: flex;
-            gap: 2rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .top-nav .nav-links {
+            display: flex;
+            gap: 0;
             list-style: none;
-            flex-wrap: wrap;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .top-nav a {
+            color: #1c1b1f;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+            padding: 0.75rem 1rem;
+            border-radius: 20px;
+            margin: 0.25rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .top-nav a:hover {
+            background-color: #f3f3f3;
+        }
+        
+        .top-nav a.active {
+            background-color: #e8def8;
+            color: #6750a4;
+        }
+        
+        .top-nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background-color: #6750a4;
+            border-radius: 2px;
+        }
+        
+        .section-nav {
+            background: #fef7ff;
+            border-bottom: 1px solid #e8def8;
+            position: sticky;
+            top: 64px;
+            z-index: 99;
+        }
+        
+        .section-links {
+            display: flex;
+            gap: 0;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .section-links::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .section-links a {
+            color: #49454f;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            white-space: nowrap;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .section-links a:hover {
+            color: #6750a4;
+            background-color: #f3f3f3;
+            border-radius: 20px;
+        }
+        
+        .section-links a.active {
+            color: #6750a4;
+            background-color: #e8def8;
+            border-radius: 20px;
         }
         
         .nav-links a {
@@ -102,12 +201,17 @@
         }
         
         .card {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--outline-variant);
+            border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.30);
+            transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.30);
         }
         
         .card.warning {
@@ -168,6 +272,8 @@
             margin: 1rem 0;
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
         }
         
         table {
@@ -243,6 +349,22 @@
             margin-top: 3rem;
         }
         
+        /* Fix list alignment issues */
+        ul, ol {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+        }
+        
+        ul li, ol li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Ensure nested lists are properly aligned */
+        ul ul, ol ol, ul ol, ol ul {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+        }
+        
         @media (max-width: 768px) {
             .nav-links {
                 flex-direction: column;
@@ -271,15 +393,22 @@
         </div>
     </header>
     
-    <nav>
+    <nav class="top-nav">
         <div class="container">
             <ul class="nav-links">
                 <li><a href="index.html" class="active">Performance Dashboard</a></li>
-                <li><a href="version-analysis.html">Version Analysis</a></li>
+                <li><a href="version-analysis.html">ALS History</a></li>
                 <li><a href="getting-started.html">Getting Started</a></li>
                 <li><a href="nested-als.html">Nested ALS Guide</a></li>
-                <li><a href="enterprise-dashboard.html">Enterprise Dashboard</a></li>
+                <li><a href="BENCHMARK_TYPES.md">Benchmark Types</a></li>
                 <li><a href="raw-data.html">Raw Data & Resources</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <nav class="section-nav">
+        <div class="container">
+            <ul class="section-links">
                 <li><a href="#overview">Overview</a></li>
                 <li><a href="#performance">Performance</a></li>
                 <li><a href="#distributed">Distributed Systems</a></li>
@@ -299,23 +428,45 @@
                     <p>AsyncLocalStorage enables powerful patterns like request tracing, user context propagation, distributed tracing, and logging context preservation, but it comes with performance implications that vary significantly across Node.js versions.</p>
                 </div>
                 
-                <div class="card">
-                    <h3>🚀 Key Features</h3>
-                    <ul>
-                        <li><strong>Performance Benchmarks:</strong> Compare execution time with and without AsyncLocalStorage</li>
-                        <li><strong>Distributed System Testing:</strong> Multi-tenant rate limiter simulation with worker threads and cluster mode</li>
-                        <li><strong>Enhanced ALS Stress Testing:</strong> Context nesting, object sizes, rapid switching, concurrent operations</li>
-                        <li><strong>Memory Profiling:</strong> Analyze memory usage and detect potential leaks</li>
-                        <li><strong>Multi-Version Testing:</strong> Test across different Node.js versions using NVM</li>
-                        <li><strong>Concurrent Testing:</strong> Evaluate performance under concurrent load</li>
-                        <li><strong>Automated Reporting:</strong> Generate comprehensive reports and visualizations</li>
-                        <li><strong>GitHub Integration:</strong> Automated testing and GitHub Pages deployment</li>
-                        <li><strong>CI/CD Ready:</strong> GitHub Actions workflows for continuous testing</li>
-                    </ul>
+
+                
+                <div class="card info">
+                    <h3>Two Types of Benchmarks</h3>
+                    <p>This project provides <strong>two distinct types of benchmarks</strong> to give you a complete picture of AsyncLocalStorage performance:</p>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>1. Simple Overhead Tests</h4>
+                            <p><strong>Purpose:</strong> Measure basic AsyncLocalStorage performance in isolation</p>
+                            <ul>
+                                <li>Basic AsyncLocalStorage.run() overhead</li>
+                                <li>Nested contexts (one inside another)</li>
+                                <li>Data size impact (1KB to 10MB)</li>
+                                <li>Performance with/without async operations</li>
+                                <li>Context switching overhead (Node.js v24+)</li>
+                            </ul>
+                            <p><em>Similar to the code examples in the <a href="nested-als.html">nested-als.html</a> documentation</em></p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>2. Advanced Distributed Tests</h4>
+                            <p><strong>Purpose:</strong> Measure performance in complex, real-world distributed applications</p>
+                            <ul>
+                                <li>Multi-tenant rate limiter (2000+ tenants)</li>
+                                <li>Worker thread performance & context isolation</li>
+                                <li>Cluster mode (multi-process) performance</li>
+                                <li>High-concurrency scenarios (5000+ RPS)</li>
+                                <li>Real-world latency patterns</li>
+                            </ul>
+                            <p><em>Simulates production SaaS platforms with distributed tracing</em></p>
+                        </div>
+                    </div>
+                    
+                    <p><strong>Key Difference:</strong> Simple tests measure basic overhead in isolation, while advanced tests simulate complex production scenarios with multiple processes, threads, and high concurrency.</p>
+                    <p><a href="BENCHMARK_TYPES.md">📖 Read detailed explanation of benchmark types →</a></p>
                 </div>
                 
                 <div class="card">
-                    <h3>📊 What Gets Tested</h3>
+                    <h3>What Gets Tested</h3>
                     <div class="feature-grid">
                         <div class="feature-card">
                             <h4>Performance Benchmarks</h4>
@@ -368,7 +519,7 @@
                 </div>
                 
                 <div class="card">
-                    <h3>🏃‍♂️ Quick Start</h3>
+                    <h3>Quick Start</h3>
                     <p>Get started with performance testing:</p>
                     <div class="code-block">git clone https://github.com/tobrien/async-node-stats.git
 cd async-node-stats
@@ -377,32 +528,7 @@ npm run benchmark-distributed</div>
                     <p><a href="getting-started.html">→ Full Getting Started Guide</a></p>
                 </div>
                 
-                <div id="summary-metrics" class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="metric-value" id="avg-overhead">--</div>
-                        <div class="metric-label">Average Overhead (%)</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="node-version">--</div>
-                        <div class="metric-label">Latest Node.js Version</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="test-count">--</div>
-                        <div class="metric-label">Total Tests Run</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="memory-overhead">--</div>
-                        <div class="metric-label">Memory Overhead (MB)</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="distributed-throughput">--</div>
-                        <div class="metric-label">Distributed Throughput (req/s)</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="context-error-rate">--</div>
-                        <div class="metric-label">Context Error Rate (%)</div>
-                    </div>
-                </div>
+
             </section>
             
             <section id="performance" class="section">
@@ -436,7 +562,7 @@ npm run benchmark-distributed</div>
                 <h2>Distributed System Performance</h2>
                 
                 <div class="card info">
-                    <h3>🚀 NEW: Distributed System Benchmarks</h3>
+                    <h3>NEW: Distributed System Benchmarks</h3>
                     <p>The latest version includes comprehensive distributed system testing that simulates real-world production scenarios:</p>
                     <ul>
                         <li><strong>Multi-Tenant Rate Limiter:</strong> Simulates a SaaS platform with thousands of tenants</li>

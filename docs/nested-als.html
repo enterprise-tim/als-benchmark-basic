@@ -11,12 +11,24 @@
     
     <style>
         :root {
-            --primary-color: #007bff;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
-            --light-bg: #f8f9fa;
-            --border-color: #e9ecef;
+            /* Material Design 3 Color Tokens */
+            --primary-color: #6750a4;
+            --primary-container: #e8def8;
+            --on-primary: #ffffff;
+            --on-primary-container: #21005e;
+            --secondary: #625b71;
+            --secondary-container: #e8def8;
+            --on-secondary: #ffffff;
+            --on-secondary-container: #1d192b;
+            --surface: #fffbfe;
+            --surface-container: #f3edf7;
+            --on-surface: #1c1b1f;
+            --on-surface-variant: #49454f;
+            --outline: #79747e;
+            --outline-variant: #cac4d0;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
         }
         
         * {
@@ -39,10 +51,11 @@
         }
         
         header {
-            background: linear-gradient(135deg, var(--primary-color), #0056b3);
-            color: white;
-            padding: 2rem 0;
+            background: var(--surface);
+            color: var(--on-surface);
+            padding: 3rem 0;
             text-align: center;
+            border-bottom: 1px solid var(--outline-variant);
         }
         
         h1 {
@@ -55,20 +68,105 @@
             opacity: 0.9;
         }
         
-        nav {
-            background: var(--light-bg);
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--border-color);
+        .top-nav {
+            background: #fff;
+            box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.30);
             position: sticky;
             top: 0;
             z-index: 100;
         }
         
-        .nav-links {
+        .top-nav .container {
             display: flex;
-            gap: 2rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .top-nav .nav-links {
+            display: flex;
+            gap: 0;
             list-style: none;
-            flex-wrap: wrap;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .top-nav a {
+            color: #1c1b1f;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+            padding: 0.75rem 1rem;
+            border-radius: 20px;
+            margin: 0.25rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .top-nav a:hover {
+            background-color: #f3f3f3;
+        }
+        
+        .top-nav a.active {
+            background-color: #e8def8;
+            color: #6750a4;
+        }
+        
+        .top-nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background-color: #6750a4;
+            border-radius: 2px;
+        }
+        
+        .section-nav {
+            background: #fef7ff;
+            border-bottom: 1px solid #e8def8;
+            position: sticky;
+            top: 64px;
+            z-index: 99;
+        }
+        
+        .section-links {
+            display: flex;
+            gap: 0;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .section-links::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .section-links a {
+            color: #49454f;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            white-space: nowrap;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .section-links a:hover {
+            color: #6750a4;
+            background-color: #f3f3f3;
+            border-radius: 20px;
+        }
+        
+        .section-links a.active {
+            color: #6750a4;
+            background-color: #e8def8;
+            border-radius: 20px;
         }
         
         .nav-links a {
@@ -105,12 +203,17 @@
         }
         
         .card {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--outline-variant);
+            border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.30);
+            transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.30);
         }
         
         .card.warning {
@@ -133,6 +236,7 @@
             margin: 1rem 0;
             overflow-x: auto;
             font-size: 0.9rem;
+            box-shadow: none;
         }
         
         .code-block.large {
@@ -160,6 +264,7 @@
             margin: 0;
             padding: 1rem;
             border-radius: 4px;
+            box-shadow: none;
         }
         
         .code-block.large pre[class*="language-"] {
@@ -220,6 +325,22 @@
             margin-top: 3rem;
         }
         
+        /* Fix list alignment issues */
+        ul, ol {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+        }
+        
+        ul li, ol li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Ensure nested lists are properly aligned */
+        ul ul, ol ol, ul ol, ol ul {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+        }
+        
         @media (max-width: 768px) {
             .nav-links {
                 flex-direction: column;
@@ -244,15 +365,22 @@
         </div>
     </header>
     
-    <nav>
+    <nav class="top-nav">
         <div class="container">
             <ul class="nav-links">
                 <li><a href="index.html">Performance Dashboard</a></li>
-                <li><a href="version-analysis.html">Version Analysis</a></li>
+                <li><a href="version-analysis.html">ALS History</a></li>
                 <li><a href="getting-started.html">Getting Started</a></li>
                 <li><a href="nested-als.html" class="active">Nested ALS Guide</a></li>
-                <li><a href="enterprise-dashboard.html">Enterprise Dashboard</a></li>
+                <li><a href="BENCHMARK_TYPES.md">Benchmark Types</a></li>
                 <li><a href="raw-data.html">Raw Data & Resources</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <nav class="section-nav">
+        <div class="container">
+            <ul class="section-links">
                 <li><a href="#what-is-nested">What is Nested ALS?</a></li>
                 <li><a href="#examples">Code Examples</a></li>
                 <li><a href="#performance">Performance Impact</a></li>
@@ -279,13 +407,19 @@
                 </div>
                 
                 <div class="card warning">
-                    <h3>⚠️ Performance Impact</h3>
+                    <h3>Performance Impact</h3>
                     <p>Nested AsyncLocalStorage contexts can have <strong>significantly higher overhead</strong> than basic usage. Our benchmarks show nested contexts can add 50-100%+ overhead compared to 0-5% for basic usage.</p>
                 </div>
             </section>
             
             <section id="examples" class="section">
                 <h2>Code Examples</h2>
+                
+                <div class="card info">
+                    <h3>Simple Benchmark Examples</h3>
+                    <p>These code examples demonstrate the patterns that the <strong>Simple AsyncLocalStorage Overhead Tests</strong> benchmark. This is the first type of benchmark in this project, measuring basic performance in isolation.</p>
+                    <p>For the second type of benchmark (Advanced Distributed System Tests), see the <a href="index.html#distributed">Distributed Systems section</a> or <a href="BENCHMARK_TYPES.md">Benchmark Types documentation</a>.</p>
+                </div>
                 
                 <div class="card">
                     <h3>Basic AsyncLocalStorage (Low Overhead)</h3>
@@ -413,7 +547,7 @@ function optimizedBusinessLogic() {
                 
                 <div class="comparison-grid">
                     <div class="comparison-item good">
-                        <h3>✅ Single Context</h3>
+                        <h3>Single Context</h3>
                         <ul>
                             <li>0-5% performance overhead</li>
                             <li>Simple context management</li>
@@ -423,7 +557,7 @@ function optimizedBusinessLogic() {
                     </div>
                     
                     <div class="comparison-item bad">
-                        <h3>❌ Nested Contexts</h3>
+                        <h3>Nested Contexts</h3>
                         <ul>
                             <li>50-100%+ performance overhead</li>
                             <li>Complex context chain management</li>
@@ -458,7 +592,7 @@ function optimizedBusinessLogic() {
                 <h2>Best Practices</h2>
                 
                 <div class="card success">
-                    <h3>✅ Recommended Approaches</h3>
+                    <h3>Recommended Approaches</h3>
                     <ul>
                         <li><strong>Use Single Context:</strong> Combine all context data into one AsyncLocalStorage instance</li>
                         <li><strong>Namespace Your Data:</strong> Use object properties to organize different types of context</li>
@@ -468,7 +602,7 @@ function optimizedBusinessLogic() {
                 </div>
                 
                 <div class="card warning">
-                    <h3>⚠️ When Nested Contexts Might Be Necessary</h3>
+                    <h3>When Nested Contexts Might Be Necessary</h3>
                     <ul>
                         <li><strong>Library Boundaries:</strong> When different libraries need isolated contexts</li>
                         <li><strong>Security Isolation:</strong> When contexts need strict separation for security</li>

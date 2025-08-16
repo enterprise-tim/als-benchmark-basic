@@ -1,23 +1,12 @@
 {
-  "generatedAt": "2025-08-16T15:02:21.716Z",
+  "generatedAt": "2025-08-16T14:42:13.332Z",
   "versions": [
     {
       "version": "v18.19.1",
       "cleanVersion": "18.19.1",
-      "iterations": 1,
       "avgOverhead": 4.03,
-      "overheadStdDev": 5.93,
-      "overheadCV": 146.97,
-      "minOverhead": -1.87,
-      "maxOverhead": 16.07,
       "avgNestedOverhead": 70.58,
-      "nestedOverheadStdDev": 133.37,
-      "nestedOverheadCV": 188.96,
-      "minNestedOverhead": -57.4,
-      "maxNestedOverhead": 265.24,
-      "memoryOverheadMB": -2.21,
-      "memoryOverheadStdDev": 7.51,
-      "memoryOverheadCV": 339.54,
+      "memoryOverheadMB": -13.27,
       "baselineTime": 2536.48,
       "baselineMemory": 3.16,
       "benchmarkCount": 6,
@@ -76,29 +65,17 @@
         "avgMemoryOverhead": 92867.2,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v20.0.0",
       "cleanVersion": "20.0.0",
-      "iterations": 1,
       "avgOverhead": -4.31,
-      "overheadStdDev": 6.29,
-      "overheadCV": 146.06,
-      "minOverhead": -16.85,
-      "maxOverhead": 0.85,
       "avgNestedOverhead": 86.58,
-      "nestedOverheadStdDev": 156.93,
-      "nestedOverheadCV": 181.26,
-      "minNestedOverhead": -52.82,
-      "maxNestedOverhead": 331.1,
-      "memoryOverheadMB": 4.1,
-      "memoryOverheadStdDev": 6.21,
-      "memoryOverheadCV": 151.65,
+      "memoryOverheadMB": 24.58,
       "baselineTime": 2524.92,
-      "baselineMemory": 1.56,
+      "baselineMemory": 1.04,
       "benchmarkCount": 6,
       "testDate": "2025-08-16T13:47:23.051Z",
       "benchmarks": [
@@ -155,27 +132,15 @@
         "avgMemoryOverhead": 54371.2,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v20.11.0",
       "cleanVersion": "20.11.0",
-      "iterations": 1,
       "avgOverhead": 1.75,
-      "overheadStdDev": 8.58,
-      "overheadCV": 489.87,
-      "minOverhead": -5.48,
-      "maxOverhead": 20.3,
       "avgNestedOverhead": 67.82,
-      "nestedOverheadStdDev": 125.97,
-      "nestedOverheadCV": 185.75,
-      "minNestedOverhead": -48.96,
-      "maxNestedOverhead": 238.09,
-      "memoryOverheadMB": -0.64,
-      "memoryOverheadStdDev": 6.8,
-      "memoryOverheadCV": 1062.15,
+      "memoryOverheadMB": -3.84,
       "baselineTime": 2498.69,
       "baselineMemory": 0.62,
       "benchmarkCount": 6,
@@ -234,29 +199,17 @@
         "avgMemoryOverhead": 31583.2,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v21.0.0",
       "cleanVersion": "21.0.0",
-      "iterations": 1,
       "avgOverhead": 4.58,
-      "overheadStdDev": 13.78,
-      "overheadCV": 301.15,
-      "minOverhead": -11.72,
-      "maxOverhead": 33.1,
       "avgNestedOverhead": 80.66,
-      "nestedOverheadStdDev": 138.13,
-      "nestedOverheadCV": 171.26,
-      "minNestedOverhead": -47.91,
-      "maxNestedOverhead": 278.92,
-      "memoryOverheadMB": 2.26,
-      "memoryOverheadStdDev": 6.7,
-      "memoryOverheadCV": 296.52,
+      "memoryOverheadMB": 13.56,
       "baselineTime": 2703.57,
-      "baselineMemory": 1.74,
+      "baselineMemory": 1.45,
       "benchmarkCount": 6,
       "testDate": "2025-08-16T13:49:57.972Z",
       "benchmarks": [
@@ -313,27 +266,15 @@
         "avgMemoryOverhead": 86576,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v21.7.3",
       "cleanVersion": "21.7.3",
-      "iterations": 1,
       "avgOverhead": -0.3,
-      "overheadStdDev": 2.28,
-      "overheadCV": 764.13,
-      "minOverhead": -3.49,
-      "maxOverhead": 1.94,
       "avgNestedOverhead": 70.73,
-      "nestedOverheadStdDev": 128.65,
-      "nestedOverheadCV": 181.9,
-      "minNestedOverhead": -49.97,
-      "maxNestedOverhead": 258.18,
-      "memoryOverheadMB": 3.23,
-      "memoryOverheadStdDev": 6.96,
-      "memoryOverheadCV": 215.39,
+      "memoryOverheadMB": 19.38,
       "baselineTime": 2473.19,
       "baselineMemory": 0.72,
       "benchmarkCount": 6,
@@ -392,27 +333,15 @@
         "avgMemoryOverhead": 109757.6,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v22.0.0",
       "cleanVersion": "22.0.0",
-      "iterations": 1,
       "avgOverhead": 0,
-      "overheadStdDev": 0,
-      "overheadCV": null,
-      "minOverhead": 0,
-      "maxOverhead": 0,
       "avgNestedOverhead": 0,
-      "nestedOverheadStdDev": 0,
-      "nestedOverheadCV": null,
-      "minNestedOverhead": 0,
-      "maxNestedOverhead": 0,
       "memoryOverheadMB": 0,
-      "memoryOverheadStdDev": 0,
-      "memoryOverheadCV": null,
       "baselineTime": 0,
       "baselineMemory": 0,
       "benchmarkCount": 2,
@@ -439,27 +368,15 @@
         "avgMemoryOverhead": 104993.6,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v22.0.0",
       "cleanVersion": "22.0.0",
-      "iterations": 1,
       "avgOverhead": -0.11,
-      "overheadStdDev": 9.77,
-      "overheadCV": 9052.23,
-      "minOverhead": -14.3,
-      "maxOverhead": 10.95,
       "avgNestedOverhead": 55.8,
-      "nestedOverheadStdDev": 112.52,
-      "nestedOverheadCV": 201.64,
-      "minNestedOverhead": -55.97,
-      "maxNestedOverhead": 224.76,
-      "memoryOverheadMB": -1.17,
-      "memoryOverheadStdDev": 5.42,
-      "memoryOverheadCV": 463.77,
+      "memoryOverheadMB": -7.02,
       "baselineTime": 2608.63,
       "baselineMemory": 2.02,
       "benchmarkCount": 6,
@@ -518,29 +435,17 @@
         "avgMemoryOverhead": 28968,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v22.18.0",
       "cleanVersion": "22.18.0",
-      "iterations": 1,
       "avgOverhead": -7.36,
-      "overheadStdDev": 11.18,
-      "overheadCV": 151.94,
-      "minOverhead": -25.99,
-      "maxOverhead": 3.95,
       "avgNestedOverhead": 132.83,
-      "nestedOverheadStdDev": 207.46,
-      "nestedOverheadCV": 156.19,
-      "minNestedOverhead": -60.37,
-      "maxNestedOverhead": 455.53,
-      "memoryOverheadMB": 1.42,
-      "memoryOverheadStdDev": 10.86,
-      "memoryOverheadCV": 763.68,
+      "memoryOverheadMB": 8.53,
       "baselineTime": 3011.84,
-      "baselineMemory": 2.14,
+      "baselineMemory": 1.78,
       "benchmarkCount": 6,
       "testDate": "2025-08-16T13:53:56.376Z",
       "benchmarks": [
@@ -597,29 +502,17 @@
         "avgMemoryOverhead": 73975.2,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v23.0.0",
       "cleanVersion": "23.0.0",
-      "iterations": 1,
       "avgOverhead": -1.7,
-      "overheadStdDev": 5.06,
-      "overheadCV": 296.9,
-      "minOverhead": -9.84,
-      "maxOverhead": 3.04,
       "avgNestedOverhead": 101.78,
-      "nestedOverheadStdDev": 162.89,
-      "nestedOverheadCV": 160.05,
-      "minNestedOverhead": -49.87,
-      "maxNestedOverhead": 326.82,
-      "memoryOverheadMB": -5.02,
-      "memoryOverheadStdDev": 5.7,
-      "memoryOverheadCV": 113.37,
+      "memoryOverheadMB": -30.14,
       "baselineTime": 2509.38,
-      "baselineMemory": 8.75,
+      "baselineMemory": 5.84,
       "benchmarkCount": 6,
       "testDate": "2025-08-16T13:55:19.542Z",
       "benchmarks": [
@@ -676,29 +569,17 @@
         "avgMemoryOverhead": 32020.8,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v24.0.0",
       "cleanVersion": "24.0.0",
-      "iterations": 1,
       "avgOverhead": 1.41,
-      "overheadStdDev": 7.79,
-      "overheadCV": 553.72,
-      "minOverhead": -6.37,
-      "maxOverhead": 18.21,
       "avgNestedOverhead": 101.8,
-      "nestedOverheadStdDev": 166.25,
-      "nestedOverheadCV": 163.32,
-      "minNestedOverhead": -48.8,
-      "maxNestedOverhead": 347.82,
-      "memoryOverheadMB": 2.77,
-      "memoryOverheadStdDev": 7.41,
-      "memoryOverheadCV": 267.3,
+      "memoryOverheadMB": 16.63,
       "baselineTime": 2359.25,
-      "baselineMemory": 4.36,
+      "baselineMemory": 3.64,
       "benchmarkCount": 6,
       "testDate": "2025-08-16T13:56:36.559Z",
       "benchmarks": [
@@ -755,29 +636,17 @@
         "avgMemoryOverhead": 5815.2,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     {
       "version": "v24.6.0",
       "cleanVersion": "24.6.0",
-      "iterations": 1,
       "avgOverhead": 3.69,
-      "overheadStdDev": 12.3,
-      "overheadCV": 333.27,
-      "minOverhead": -15.8,
-      "maxOverhead": 25.36,
       "avgNestedOverhead": 105.8,
-      "nestedOverheadStdDev": 169.94,
-      "nestedOverheadCV": 160.63,
-      "minNestedOverhead": -55.21,
-      "maxNestedOverhead": 334.33,
-      "memoryOverheadMB": 1.69,
-      "memoryOverheadStdDev": 7.13,
-      "memoryOverheadCV": 422.6,
+      "memoryOverheadMB": 10.13,
       "baselineTime": 2445.23,
-      "baselineMemory": 5.64,
+      "baselineMemory": 4.7,
       "benchmarkCount": 6,
       "testDate": "2025-08-15T18:57:03.221Z",
       "benchmarks": [
@@ -834,8 +703,7 @@
         "avgMemoryOverhead": 5505.6,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     }
   ],
@@ -843,205 +711,139 @@
     "overheadByVersion": [
       {
         "version": "v22.0.0",
-        "overhead": 0,
-        "stdDev": 0,
-        "cv": null
+        "overhead": 0
       },
       {
         "version": "v18.19.1",
-        "overhead": 4.032992654113987,
-        "stdDev": 5.927410412299222,
-        "cv": 146.97300294491663
+        "overhead": 4.032992654113987
       },
       {
         "version": "v20.0.0",
-        "overhead": -4.30567134224644,
-        "stdDev": 6.288958087665284,
-        "cv": 146.06219536449998
+        "overhead": -4.30567134224644
       },
       {
         "version": "v20.11.0",
-        "overhead": 1.7506225066139038,
-        "stdDev": 8.575754842967925,
-        "cv": 489.8688786742126
+        "overhead": 1.7506225066139038
       },
       {
         "version": "v21.0.0",
-        "overhead": 4.577163306682559,
-        "stdDev": 13.784260950298266,
-        "cv": 301.15291997935805
+        "overhead": 4.577163306682559
       },
       {
         "version": "v21.7.3",
-        "overhead": -0.2982607644327407,
-        "stdDev": 2.2790971092333154,
-        "cv": 764.1290377458491
+        "overhead": -0.2982607644327407
       },
       {
         "version": "v22.0.0",
-        "overhead": -0.10796323373012233,
-        "stdDev": 9.773077208665775,
-        "cv": 9052.227199025658
+        "overhead": -0.10796323373012233
       },
       {
         "version": "v22.18.0",
-        "overhead": -7.357332238966076,
-        "stdDev": 11.178835065384797,
-        "cv": 151.94141982849692
+        "overhead": -7.357332238966076
       },
       {
         "version": "v23.0.0",
-        "overhead": -1.7037615490736002,
-        "stdDev": 5.0584276526412015,
-        "cv": 296.8976295651032
+        "overhead": -1.7037615490736002
       },
       {
         "version": "v24.0.0",
-        "overhead": 1.4065154800415032,
-        "stdDev": 7.788124088296412,
-        "cv": 553.7176233614294
+        "overhead": 1.4065154800415032
       },
       {
         "version": "v24.6.0",
-        "overhead": 3.69159578243381,
-        "stdDev": 12.302876593701065,
-        "cv": 333.2671646295461
+        "overhead": 3.69159578243381
       }
     ],
     "nestedOverheadByVersion": [
       {
         "version": "v22.0.0",
-        "overhead": 0,
-        "stdDev": 0,
-        "cv": null
+        "overhead": 0
       },
       {
         "version": "v18.19.1",
-        "overhead": 70.5778023091753,
-        "stdDev": 133.36702155708645,
-        "cv": 188.96454294914818
+        "overhead": 70.5778023091753
       },
       {
         "version": "v20.0.0",
-        "overhead": 86.58009771613324,
-        "stdDev": 156.93124776164893,
-        "cv": 181.2555678513707
+        "overhead": 86.58009771613324
       },
       {
         "version": "v20.11.0",
-        "overhead": 67.81833729039612,
-        "stdDev": 125.97449677022746,
-        "cv": 185.75285358413961
+        "overhead": 67.81833729039612
       },
       {
         "version": "v21.0.0",
-        "overhead": 80.65588337915646,
-        "stdDev": 138.1290763981384,
-        "cv": 171.25728540942927
+        "overhead": 80.65588337915646
       },
       {
         "version": "v21.7.3",
-        "overhead": 70.72784711023839,
-        "stdDev": 128.65097269347373,
-        "cv": 181.8957849698928
+        "overhead": 70.72784711023839
       },
       {
         "version": "v22.0.0",
-        "overhead": 55.803986534308656,
-        "stdDev": 112.52288734609724,
-        "cv": 201.63951418939834
+        "overhead": 55.803986534308656
       },
       {
         "version": "v22.18.0",
-        "overhead": 132.8252124959307,
-        "stdDev": 207.4649812773875,
-        "cv": 156.19397656430888
+        "overhead": 132.8252124959307
       },
       {
         "version": "v23.0.0",
-        "overhead": 101.77600763991829,
-        "stdDev": 162.8914959157594,
-        "cv": 160.04901321347427
+        "overhead": 101.77600763991829
       },
       {
         "version": "v24.0.0",
-        "overhead": 101.79728814852956,
-        "stdDev": 166.25081615662313,
-        "cv": 163.31556486460744
+        "overhead": 101.79728814852956
       },
       {
         "version": "v24.6.0",
-        "overhead": 105.79546804953894,
-        "stdDev": 169.93667420425822,
-        "cv": 160.627555543953
+        "overhead": 105.79546804953894
       }
     ],
     "memoryByVersion": [
       {
         "version": "v22.0.0",
-        "memory": 0,
-        "stdDev": 0,
-        "cv": null
+        "memory": 0
       },
       {
         "version": "v18.19.1",
-        "memory": -2.2109375,
-        "stdDev": 7.507064543908374,
-        "cv": 339.5421419152904
+        "memory": -13.265625
       },
       {
         "version": "v20.0.0",
-        "memory": 4.096354166666667,
-        "stdDev": 6.211931043873298,
-        "cv": 151.64536051159226
+        "memory": 24.578125
       },
       {
         "version": "v20.11.0",
-        "memory": -0.640625,
-        "stdDev": 6.80440794249703,
-        "cv": 1062.1514837068535
+        "memory": -3.84375
       },
       {
         "version": "v21.0.0",
-        "memory": 2.2604166666666665,
-        "stdDev": 6.70266768706788,
-        "cv": 296.523547446321
+        "memory": 13.5625
       },
       {
         "version": "v21.7.3",
-        "memory": 3.2291666666666665,
-        "stdDev": 6.955422529276269,
-        "cv": 215.393729938878
+        "memory": 19.375
       },
       {
         "version": "v22.0.0",
-        "memory": -1.1692708333333333,
-        "stdDev": 5.422733606567369,
-        "cv": 463.7705356173429
+        "memory": -7.015625
       },
       {
         "version": "v22.18.0",
-        "memory": 1.421875,
-        "stdDev": 10.858528144437518,
-        "cv": 763.6767046637375
+        "memory": 8.53125
       },
       {
         "version": "v23.0.0",
-        "memory": -5.0234375,
-        "stdDev": 5.695283921967623,
-        "cv": 113.37423670479872
+        "memory": -30.140625
       },
       {
         "version": "v24.0.0",
-        "memory": 2.7708333333333335,
-        "stdDev": 7.406423975335907,
-        "cv": 267.2995118918222
+        "memory": 16.625
       },
       {
         "version": "v24.6.0",
-        "memory": 1.6875,
-        "stdDev": 7.131404741967041,
-        "cv": 422.6017624869358
+        "memory": 10.125
       }
     ]
   },
@@ -1119,17 +921,17 @@
         {
           "label": "Memory Overhead (MB)",
           "data": [
-            -2.21,
-            4.1,
-            -0.64,
-            2.26,
-            3.23,
+            -13.27,
+            24.58,
+            -3.84,
+            13.56,
+            19.38,
             0,
-            -1.17,
-            1.42,
-            -5.02,
-            2.77,
-            1.69
+            -7.02,
+            8.53,
+            -30.14,
+            16.63,
+            10.13
           ],
           "backgroundColor": "rgba(75, 192, 192, 0.2)",
           "borderColor": "rgba(75, 192, 192, 1)",
@@ -1204,22 +1006,11 @@
     "bestPerformingVersion": {
       "version": "v22.18.0",
       "cleanVersion": "22.18.0",
-      "iterations": 1,
       "avgOverhead": -7.36,
-      "overheadStdDev": 11.18,
-      "overheadCV": 151.94,
-      "minOverhead": -25.99,
-      "maxOverhead": 3.95,
       "avgNestedOverhead": 132.83,
-      "nestedOverheadStdDev": 207.46,
-      "nestedOverheadCV": 156.19,
-      "minNestedOverhead": -60.37,
-      "maxNestedOverhead": 455.53,
-      "memoryOverheadMB": 1.42,
-      "memoryOverheadStdDev": 10.86,
-      "memoryOverheadCV": 763.68,
+      "memoryOverheadMB": 8.53,
       "baselineTime": 3011.84,
-      "baselineMemory": 2.14,
+      "baselineMemory": 1.78,
       "benchmarkCount": 6,
       "testDate": "2025-08-16T13:53:56.376Z",
       "benchmarks": [
@@ -1276,29 +1067,17 @@
         "avgMemoryOverhead": 73975.2,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     "worstPerformingVersion": {
       "version": "v21.0.0",
       "cleanVersion": "21.0.0",
-      "iterations": 1,
       "avgOverhead": 4.58,
-      "overheadStdDev": 13.78,
-      "overheadCV": 301.15,
-      "minOverhead": -11.72,
-      "maxOverhead": 33.1,
       "avgNestedOverhead": 80.66,
-      "nestedOverheadStdDev": 138.13,
-      "nestedOverheadCV": 171.26,
-      "minNestedOverhead": -47.91,
-      "maxNestedOverhead": 278.92,
-      "memoryOverheadMB": 2.26,
-      "memoryOverheadStdDev": 6.7,
-      "memoryOverheadCV": 296.52,
+      "memoryOverheadMB": 13.56,
       "baselineTime": 2703.57,
-      "baselineMemory": 1.74,
+      "baselineMemory": 1.45,
       "benchmarkCount": 6,
       "testDate": "2025-08-16T13:49:57.972Z",
       "benchmarks": [
@@ -1355,173 +1134,11 @@
         "avgMemoryOverhead": 86576,
         "maxConcurrentOps": 0,
         "memoryAtMaxConcurrency": 0,
-        "leakDetected": false,
-        "iterationCount": 1
+        "leakDetected": false
       }
     },
     "averageOverhead": 0.15272727272727274,
     "overheadTrend": "improving",
-    "consistencyAnalysis": {
-      "mostConsistent": {
-        "version": "v20.0.0",
-        "cleanVersion": "20.0.0",
-        "iterations": 1,
-        "avgOverhead": -4.31,
-        "overheadStdDev": 6.29,
-        "overheadCV": 146.06,
-        "minOverhead": -16.85,
-        "maxOverhead": 0.85,
-        "avgNestedOverhead": 86.58,
-        "nestedOverheadStdDev": 156.93,
-        "nestedOverheadCV": 181.26,
-        "minNestedOverhead": -52.82,
-        "maxNestedOverhead": 331.1,
-        "memoryOverheadMB": 4.1,
-        "memoryOverheadStdDev": 6.21,
-        "memoryOverheadCV": 151.65,
-        "baselineTime": 2524.92,
-        "baselineMemory": 1.56,
-        "benchmarkCount": 6,
-        "testDate": "2025-08-16T13:47:23.051Z",
-        "benchmarks": [
-          {
-            "name": "Small Data",
-            "overhead": 0.8537614509440902,
-            "nestedOverhead": 331.0969813171572,
-            "memoryMB": -2.765625,
-            "baselineTime": 1828.9115829467773,
-            "baselineMemory": 4.796875
-          },
-          {
-            "name": "Small Data + Async",
-            "overhead": 0.3824790564559635,
-            "nestedOverhead": -48.526530508968804,
-            "memoryMB": 1.109375,
-            "baselineTime": 7402.333416998386,
-            "baselineMemory": 1.0625
-          },
-          {
-            "name": "Medium Data",
-            "overhead": -0.29286766758155475,
-            "nestedOverhead": 266.13983492169626,
-            "memoryMB": 7.953125,
-            "baselineTime": 1042.2652910351753,
-            "baselineMemory": 0.34375
-          },
-          {
-            "name": "Medium Data + Async",
-            "overhead": -2.2805461535427636,
-            "nestedOverhead": -46.78263796924736,
-            "memoryMB": 0.421875,
-            "baselineTime": 3559.973291993141,
-            "baselineMemory": 0.03125
-          },
-          {
-            "name": "Large Data",
-            "overhead": -16.848915934796405,
-            "nestedOverhead": 70.37218378488413,
-            "memoryMB": 16.015625,
-            "baselineTime": 466.7867079973221,
-            "baselineMemory": 0
-          },
-          {
-            "name": "Large Data + Async",
-            "overhead": -7.647938804957969,
-            "nestedOverhead": -52.81924524872188,
-            "memoryMB": 1.84375,
-            "baselineTime": 849.2691249847412,
-            "baselineMemory": 0
-          }
-        ],
-        "memoryAnalysis": {
-          "avgMemoryOverhead": 54371.2,
-          "maxConcurrentOps": 0,
-          "memoryAtMaxConcurrency": 0,
-          "leakDetected": false,
-          "iterationCount": 1
-        }
-      },
-      "leastConsistent": {
-        "version": "v22.0.0",
-        "cleanVersion": "22.0.0",
-        "iterations": 1,
-        "avgOverhead": -0.11,
-        "overheadStdDev": 9.77,
-        "overheadCV": 9052.23,
-        "minOverhead": -14.3,
-        "maxOverhead": 10.95,
-        "avgNestedOverhead": 55.8,
-        "nestedOverheadStdDev": 112.52,
-        "nestedOverheadCV": 201.64,
-        "minNestedOverhead": -55.97,
-        "maxNestedOverhead": 224.76,
-        "memoryOverheadMB": -1.17,
-        "memoryOverheadStdDev": 5.42,
-        "memoryOverheadCV": 463.77,
-        "baselineTime": 2608.63,
-        "baselineMemory": 2.02,
-        "benchmarkCount": 6,
-        "testDate": "2025-08-15T18:25:20.788Z",
-        "benchmarks": [
-          {
-            "name": "Small Data",
-            "overhead": 10.954673835786238,
-            "nestedOverhead": 224.76075764217694,
-            "memoryMB": 7.59375,
-            "baselineTime": 2263.225375,
-            "baselineMemory": -0.296875
-          },
-          {
-            "name": "Small Data + Async",
-            "overhead": -1.5889216154767638,
-            "nestedOverhead": -47.61263965581443,
-            "memoryMB": -2.0625,
-            "baselineTime": 6932.566082999998,
-            "baselineMemory": -2.390625
-          },
-          {
-            "name": "Medium Data",
-            "overhead": -14.304056851432225,
-            "nestedOverhead": 174.37262819975064,
-            "memoryMB": -2.921875,
-            "baselineTime": 1352.8594999999987,
-            "baselineMemory": 4.390625
-          },
-          {
-            "name": "Medium Data + Async",
-            "overhead": 10.269953210657675,
-            "nestedOverhead": -41.841075555661966,
-            "memoryMB": -10.65625,
-            "baselineTime": 3614.175833000001,
-            "baselineMemory": 8.65625
-          },
-          {
-            "name": "Large Data",
-            "overhead": -10.821184271694694,
-            "nestedOverhead": 81.1138751440546,
-            "memoryMB": 0.296875,
-            "baselineTime": 456.3078750000059,
-            "baselineMemory": 3.125
-          },
-          {
-            "name": "Large Data + Async",
-            "overhead": 4.841756289779036,
-            "nestedOverhead": -55.969626568653766,
-            "memoryMB": 0.734375,
-            "baselineTime": 1032.6228749999937,
-            "baselineMemory": -1.375
-          }
-        ],
-        "memoryAnalysis": {
-          "avgMemoryOverhead": 28968,
-          "maxConcurrentOps": 0,
-          "memoryAtMaxConcurrency": 0,
-          "leakDetected": false,
-          "iterationCount": 1
-        }
-      },
-      "averageCV": null
-    },
     "recommendations": [
       "✅ AsyncLocalStorage is generally safe to use in production with minimal overhead",
       "🔧 Consider using Node.js v22.18.0 for optimal AsyncLocalStorage performance",
