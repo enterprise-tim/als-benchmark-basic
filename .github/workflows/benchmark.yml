@@ -109,7 +109,7 @@ jobs:
     - name: Run multi-iteration benchmarks
       run: |
         echo "🚀 Running ${{ github.event.inputs.iterations || 10 }} iterations for Node.js ${{ matrix.node-version }}"
-        echo "📊 Matrix job ${{ strategy.job-index + 1 }} of ${{ strategy.job-total }}"
+        echo "📊 Matrix job ${{ strategy.job-index }} of ${{ strategy.job-total }}"
         
         # Ensure results directory exists
         mkdir -p results/versions/node_${{ matrix.node-version }}
