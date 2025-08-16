@@ -335,31 +335,36 @@ jobs:
         fi
         
         # Create a summary file
-        cat > release-package/README.md << 'EOF'
+        NODE_VERSIONS_LIST=$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /')
+        
+        cat > release-package/README.md << EOF
 # AsyncLocalStorage Benchmark Results
 
 Generated on: $(date -u)
 
 ## Contents
-- `results/` - Raw benchmark data for each Node.js version
-- `docs/` - Generated reports and analysis
+- \`results/\` - Raw benchmark data for each Node.js version
+- \`docs/\` - Generated reports and analysis
 
 ## Usage
 Download this release and extract the contents to use with the async-node-stats application.
 
 ## Node.js Versions Tested
-$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /')
+$NODE_VERSIONS_LIST
 EOF
         
         # Create a JSON manifest
+        NODE_VERSIONS=$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//')
+        TOTAL_SIZE=$(du -sh release-package | cut -f1)
+        
         cat > release-package/manifest.json << EOF
 {
   "releaseType": "benchmark-results",
   "generatedAt": "$(date -u -Iseconds)",
   "nodeVersions": [
-$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//')
+$NODE_VERSIONS
   ],
-  "totalSize": "$(du -sh release-package | cut -f1)",
+  "totalSize": "$TOTAL_SIZE",
   "workflowRun": "${{ github.run_id }}"
 }
 EOF
@@ -375,6 +380,7 @@ EOF
         # Set outputs for the next step
         echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
         echo "archive_name=async-node-stats-benchmark-${TIMESTAMP}.tar.gz" >> $GITHUB_OUTPUT
+        echo "generated_at=$(date -u -Iseconds)" >> $GITHUB_OUTPUT
     
     - name: Create Release
       id: create_release
@@ -384,7 +390,27 @@ EOF
       with:
         tag_name: ${{ steps.prepare_release.outputs.release_tag }}
         release_name: "Benchmark Results - ${{ steps.prepare_release.outputs.release_tag }}"
-        body: "## AsyncLocalStorage Benchmark Results\n\nThis release contains the latest benchmark results for AsyncLocalStorage performance across different Node.js versions.\n\n### What's Included\n- Raw benchmark data for each tested Node.js version\n- Generated performance reports and analysis\n- Memory profiling results\n- Version comparison charts and tables\n\n### Generated On\n${{ steps.prepare_release.outputs.generated_at }}\n\n### Workflow Run\n[${{ github.workflow }} #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n### Usage\nDownload the `async-node-stats-benchmark-*.tar.gz` file and extract it to use with the async-node-stats application.\n\nThe deploy workflow will automatically download and use the latest release for building the site."
+        body: |
+          ## AsyncLocalStorage Benchmark Results
+          
+          This release contains the latest benchmark results for AsyncLocalStorage performance across different Node.js versions.
+          
+          ### What's Included
+          - Raw benchmark data for each tested Node.js version
+          - Generated performance reports and analysis
+          - Memory profiling results
+          - Version comparison charts and tables
+          
+          ### Generated On
+          ${{ steps.prepare_release.outputs.generated_at }}
+          
+          ### Workflow Run
+          [${{ github.workflow }} #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          ### Usage
+          Download the `async-node-stats-benchmark-*.tar.gz` file and extract it to use with the async-node-stats application.
+          
+          The deploy workflow will automatically download and use the latest release for building the site.
         draft: false
         prerelease: false
     
