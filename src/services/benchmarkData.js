@@ -9,7 +9,7 @@ const NODE_VERSIONS = [
 
 // Helper function to determine the correct base path
 function getBasePath() {
-  return ''; // No base path needed with HashRouter
+  return '/async-node-stats'; // GitHub Pages repository path
 }
 
 // Load the data index file

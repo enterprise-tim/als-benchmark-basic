@@ -59,7 +59,7 @@ const VersionAnalysis = () => {
         setError(null)
         
         // Load the actual version comparison data from the generated JSON
-        const response = await fetch('/version-comparison.json')
+        const response = await fetch('/async-node-stats/version-comparison.json')
         if (!response.ok) {
           if (response.status === 404) {
             // No data available - this is expected when no benchmarks have been run
@@ -111,7 +111,7 @@ const VersionAnalysis = () => {
         setVersionData(transformedData)
         
         // Load the analysis content from the markdown file
-        const analysisResponse = await fetch('/NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md')
+        const analysisResponse = await fetch('/async-node-stats/NODEJS_ASYNCLOCALSTORAGE_ANALYSIS.md')
         if (analysisResponse.ok) {
           const analysisText = await analysisResponse.text()
           setAnalysisContent(analysisText)
