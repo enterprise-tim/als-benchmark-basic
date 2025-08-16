@@ -92,7 +92,7 @@ const VersionAnalysis = () => {
             status: "stable",
             testDate: new Date().toISOString(), // Use current date since not available
             benchmarkCount: (v.traditionalTestCount || 0) + (v.distributedTestCount || 0),
-            iterations: 2, // Based on deployment logs showing 2 iterations per version
+            iterations: v.iterations || 1, // Use actual iterations from JSON data
             benchmarks: v.testResults || []
           })),
           summary: {

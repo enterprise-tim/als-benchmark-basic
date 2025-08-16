@@ -316,6 +316,26 @@ class ReportGenerator {
     console.log('Detailed report generated: docs/detailed-results.json');
   }
 
+  async calculateIterationsForVersion(version) {
+    try {
+      const versionDir = path.join(this.resultsDir, 'versions', `node_${version}`);
+      if (!await fs.access(versionDir).then(() => true).catch(() => false)) {
+        return 1; // Default to 1 if directory doesn't exist
+      }
+      
+      const files = await fs.readdir(versionDir);
+      const iterationDirs = files.filter(file => 
+        file.startsWith('iteration_') && 
+        fs.stat(path.join(versionDir, file)).then(stat => stat.isDirectory()).catch(() => false)
+      );
+      
+      return Math.max(1, iterationDirs.length);
+    } catch (error) {
+      console.warn(`Could not determine iterations for version ${version}:`, error.message);
+      return 1; // Default to 1 on error
+    }
+  }
+
   async generateComparisonReport(benchmarkResults) {
     if (benchmarkResults.length === 0) return;
 
@@ -353,6 +373,9 @@ class ReportGenerator {
         totalMemoryOverhead = traditionalBenchmarks.reduce((sum, b) => sum + (b.overhead?.memoryRSSBytes || 0), 0);
       }
 
+      // Calculate iterations for this version
+      const iterations = await this.calculateIterationsForVersion(version);
+      
       const comparisonEntry = {
         nodeVersion: version,
         avgOverheadPercent: avgOverhead,
@@ -360,6 +383,7 @@ class ReportGenerator {
         totalMemoryOverheadBytes: totalMemoryOverhead,
         traditionalTestCount: traditionalBenchmarks.length,
         distributedTestCount: distributedBenchmarks.length,
+        iterations: iterations,
         testResults: []
       };
 
