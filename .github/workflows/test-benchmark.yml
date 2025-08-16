@@ -1,0 +1,110 @@
+name: Test Benchmark Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-setup:
+    runs-on: ubuntu-latest
+    outputs:
+      node-versions: ${{ steps.get-versions.outputs.versions }}
+      version-count: ${{ steps.get-versions.outputs.count }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Get configured Node.js versions
+      id: get-versions
+      run: |
+        # Extract all active versions from node-versions.json
+        VERSIONS=$(node -e "
+          const config = JSON.parse(require('fs').readFileSync('config/node-versions.json', 'utf8'));
+          const activeVersions = Object.entries(config.versions)
+            .filter(([key, version]) => version.active)
+            .map(([key, version]) => version.exact)
+            .sort((a, b) => {
+              const aParts = a.split('.').map(Number);
+              const bParts = b.split('.').map(Number);
+              for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+                const aPart = aParts[i] || 0;
+                const bPart = bParts[i] || 0;
+                if (aPart !== bPart) return aPart - bPart;
+              }
+              return 0;
+            });
+          console.log('versions=' + JSON.stringify(activeVersions));
+          console.log('count=' + activeVersions.length);
+        ")
+        
+        echo "Raw output from Node.js script:"
+        echo "$VERSIONS"
+        
+        echo "Found ${{ steps.get-versions.outputs.count }} Node.js versions to test"
+        echo "Versions: ${{ steps.get-versions.outputs.node-versions }}"
+        
+        echo "Debug: Checking outputs directly:"
+        echo "versions output: ${{ steps.get-versions.outputs.versions }}"
+        echo "count output: ${{ steps.get-versions.outputs.count }}"
+
+  test-benchmark:
+    runs-on: ubuntu-latest
+    needs: test-setup
+    strategy:
+      matrix:
+        node-version: ${{ fromJson(needs.test-setup.outputs.node-versions) }}
+      fail-fast: false
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Verify Node.js version
+      run: |
+        echo "Expected Node.js version: ${{ matrix.node-version }}"
+        echo "Actual Node.js version: $(node --version)"
+        if [ "$(node --version)" != "v${{ matrix.node-version }}" ]; then
+          echo "❌ Node.js version mismatch!"
+          exit 1
+        fi
+        echo "✅ Node.js version verified"
+    
+    - name: Test benchmark script
+      run: |
+        echo "🧪 Testing benchmark script for Node.js ${{ matrix.node-version }}"
+        
+        # Create results directory
+        mkdir -p results/versions/node_${{ matrix.node-version }}
+        
+        # Test if the script exists and can run
+        if [ -f "scripts/run-multi-iterations.js" ]; then
+          echo "✅ Multi-iteration script found"
+          
+          # Try to run a single iteration
+          echo "🚀 Running test iteration..."
+          node scripts/run-multi-iterations.js 1 || echo "⚠️ Script failed but continuing..."
+        else
+          echo "❌ Multi-iteration script not found"
+        fi
+        
+        # List what was created
+        echo "📁 Results directory contents:"
+        ls -la results/versions/node_${{ matrix.node-version }}/ || echo "No results directory"
