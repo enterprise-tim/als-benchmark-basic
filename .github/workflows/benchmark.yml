@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       iterations:
-        description: 'Number of iterations per version (default: 10)'
+        description: 'Number of iterations per version (default: 2)'
         required: false
-        default: '10'
+        default: '2'
         type: number
       run_memory_tests:
         description: 'Run memory profiling tests'
@@ -112,7 +112,7 @@ jobs:
       env:
         NODE_VERSION: ${{ matrix.node-version }}
       run: |
-        echo "🚀 Running ${{ github.event.inputs.iterations || 10 }} iterations for Node.js ${{ matrix.node-version }}"
+        echo "🚀 Running ${{ github.event.inputs.iterations || 2 }} iterations for Node.js ${{ matrix.node-version }}"
         echo "📊 Matrix job ${{ strategy.job-index }} of ${{ strategy.job-total }}"
         
         # Ensure results directory exists
@@ -120,7 +120,7 @@ jobs:
         echo "📁 Created results directory: public/results/versions/node_${{ matrix.node-version }}"
         
         # Run the benchmark
-        npm run multi-iteration ${{ github.event.inputs.iterations || 10 }}
+        npm run multi-iteration ${{ github.event.inputs.iterations || 2 }}
         
         # Verify results were created
         echo "📊 Benchmark completed, checking results:"
