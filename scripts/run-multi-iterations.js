@@ -111,7 +111,7 @@ class MultiIterationRunner {
       });
       
       // Find and copy the latest benchmark result
-      const benchmarkFiles = await this.findLatestFiles('results', 'benchmark_*.json');
+      const benchmarkFiles = await this.findLatestFiles('public/results', 'benchmark_*.json');
       if (benchmarkFiles.length > 0) {
         const latestBenchmark = benchmarkFiles[0];
         const targetPath = path.join(iterationDir, path.basename(latestBenchmark));
@@ -140,7 +140,7 @@ class MultiIterationRunner {
       });
       
       // Find and copy the latest memory result
-      const memoryFiles = await this.findLatestFiles('results', 'memory_*.json');
+      const memoryFiles = await this.findLatestFiles('public/results', 'memory_*.json');
       if (memoryFiles.length > 0) {
         const latestMemory = memoryFiles[0];
         const targetPath = path.join(iterationDir, path.basename(latestMemory));
