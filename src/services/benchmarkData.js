@@ -360,72 +360,161 @@ async function debugDataLoading(version) {
   try {
     const basePath = getBasePath();
     const versionDir = `node_${version}`;
-    const dataIndex = await loadDataIndex();
-    const versionData = dataIndex[version];
     
     console.log('Base path:', basePath);
     console.log('Version directory:', versionDir);
-    console.log('Version data from index:', versionData);
     console.log('Current location:', window.location.href);
     console.log('Hostname:', window.location.hostname);
     console.log('Pathname:', window.location.pathname);
+    console.log('Origin:', window.location.origin);
+    console.log('Protocol:', window.location.protocol);
+    console.log('Port:', window.location.port);
     
-    if (versionData) {
-      const memoryUrl = `${basePath}/results/versions/${versionDir}/${versionData.memory}`;
-      const benchmarkUrl = `${basePath}/results/versions/${versionDir}/${versionData.benchmark}`;
+    // First test if we can access the data-index.json
+    console.log('Testing data-index.json access...');
+    
+    // Test if we can access the root
+    console.log('Testing root access...');
+    try {
+      const rootTestResponse = await fetch(`${basePath}/`);
+      console.log('Root test response status:', rootTestResponse.status);
+      console.log('Root test response status text:', rootTestResponse.statusText);
+    } catch (error) {
+      console.log('Root test error:', error);
+    }
+    
+    // Test if we can access the results directory structure
+    console.log('Testing results directory access...');
+    try {
+      const resultsTestResponse = await fetch(`${basePath}/results/versions/`);
+      console.log('Results directory test response status:', resultsTestResponse.status);
+      console.log('Results directory test response status text:', resultsTestResponse.statusText);
+    } catch (error) {
+      console.log('Results directory test error:', error);
+    }
+    
+    // Test if we can access the specific version directory
+    console.log('Testing version directory access...');
+    try {
+      const versionDirTestResponse = await fetch(`${basePath}/results/versions/${versionDir}/`);
+      console.log('Version directory test response status:', versionDirTestResponse.status);
+      console.log('Version directory test response status text:', versionDirTestResponse.statusText);
+    } catch (error) {
+      console.log('Version directory test error:', error);
+    }
+    
+    // Test if we can access a known file directly
+    console.log('Testing direct file access...');
+    try {
+      const directFileTestResponse = await fetch(`${basePath}/results/versions/${versionDir}/memory_v24_6_0_1755352739076.json`);
+      console.log('Direct file test response status:', directFileTestResponse.status);
+      console.log('Direct file test response status text:', directFileTestResponse.statusText);
+      if (directFileTestResponse.ok) {
+        const fileText = await directFileTestResponse.text();
+        console.log('Direct file response preview:', fileText.substring(0, 200));
+      }
+    } catch (error) {
+      console.log('Direct file test error:', error);
+    }
+    
+    try {
+      // Try different paths for the data index
+      console.log('Trying data-index.json with basePath:', `${basePath}/data-index.json`);
+      let indexResponse = await fetch(`${basePath}/data-index.json`);
       
-      console.log('Memory URL:', memoryUrl);
-      console.log('Benchmark URL:', benchmarkUrl);
-      
-      // Test memory file
-      try {
-        console.log('Testing memory file fetch...');
-        const memoryResponse = await fetch(memoryUrl);
-        console.log('Memory response status:', memoryResponse.status);
-        console.log('Memory response status text:', memoryResponse.statusText);
-        console.log('Memory response headers:', Object.fromEntries(memoryResponse.headers.entries()));
-        
-        if (memoryResponse.ok) {
-          const memoryText = await memoryResponse.text();
-          console.log('Memory response preview:', memoryText.substring(0, 200));
-          console.log('Memory response length:', memoryText.length);
-        } else {
-          console.log('Memory response not ok, trying to get error text...');
-          try {
-            const errorText = await memoryResponse.text();
-            console.log('Memory error response:', errorText.substring(0, 500));
-          } catch (e) {
-            console.log('Could not read error response:', e);
-          }
-        }
-      } catch (error) {
-        console.error('Memory fetch error:', error);
+      // If that fails, try without basePath
+      if (!indexResponse.ok) {
+        console.log('Trying data-index.json without basePath: /data-index.json');
+        indexResponse = await fetch('/data-index.json');
       }
       
-      // Test benchmark file
-      try {
-        console.log('Testing benchmark file fetch...');
-        const benchmarkResponse = await fetch(benchmarkUrl);
-        console.log('Benchmark response status:', benchmarkResponse.status);
-        console.log('Benchmark response status text:', benchmarkResponse.statusText);
-        console.log('Benchmark response headers:', Object.fromEntries(benchmarkResponse.headers.entries()));
+      // If that fails, try with relative path
+      if (!indexResponse.ok) {
+        console.log('Trying data-index.json with relative path: ./data-index.json');
+        indexResponse = await fetch('./data-index.json');
+      }
+      
+      console.log('Data index response status:', indexResponse.status);
+      console.log('Data index response status text:', indexResponse.statusText);
+      console.log('Data index response headers:', Object.fromEntries(indexResponse.headers.entries()));
+      
+      if (indexResponse.ok) {
+        const indexText = await indexResponse.text();
+        console.log('Data index response preview:', indexText.substring(0, 200));
+        console.log('Data index response length:', indexText.length);
         
-        if (benchmarkResponse.ok) {
-          const benchmarkText = await benchmarkResponse.text();
-          console.log('Benchmark response preview:', benchmarkText.substring(0, 200));
-          console.log('Benchmark response length:', benchmarkText.length);
-        } else {
-          console.log('Benchmark response not ok, trying to get error text...');
+        const dataIndex = JSON.parse(indexText);
+        const versionData = dataIndex.versions[version];
+        console.log('Version data from index:', versionData);
+        
+        if (versionData) {
+          const memoryUrl = `${basePath}/results/versions/${versionDir}/${versionData.memory}`;
+          const benchmarkUrl = `${basePath}/results/versions/${versionDir}/${versionData.benchmark}`;
+          
+          console.log('Memory URL:', memoryUrl);
+          console.log('Benchmark URL:', benchmarkUrl);
+          
+          // Test memory file
           try {
-            const errorText = await benchmarkResponse.text();
-            console.log('Benchmark error response:', errorText.substring(0, 500));
-          } catch (e) {
-            console.log('Could not read error response:', e);
+            console.log('Testing memory file fetch...');
+            const memoryResponse = await fetch(memoryUrl);
+            console.log('Memory response status:', memoryResponse.status);
+            console.log('Memory response status text:', memoryResponse.statusText);
+            console.log('Memory response headers:', Object.fromEntries(memoryResponse.headers.entries()));
+            
+            if (memoryResponse.ok) {
+              const memoryText = await memoryResponse.text();
+              console.log('Memory response preview:', memoryText.substring(0, 200));
+              console.log('Memory response length:', memoryText.length);
+            } else {
+              console.log('Memory response not ok, trying to get error text...');
+              try {
+                const errorText = await memoryResponse.text();
+                console.log('Memory error response:', errorText.substring(0, 500));
+              } catch (e) {
+                console.log('Could not read error response:', e);
+              }
+            }
+          } catch (error) {
+            console.error('Memory fetch error:', error);
+          }
+          
+          // Test benchmark file
+          try {
+            console.log('Testing benchmark file fetch...');
+            const benchmarkResponse = await fetch(benchmarkUrl);
+            console.log('Benchmark response status:', benchmarkResponse.status);
+            console.log('Benchmark response status text:', benchmarkResponse.statusText);
+            console.log('Benchmark response headers:', Object.fromEntries(benchmarkResponse.headers.entries()));
+            
+            if (benchmarkResponse.ok) {
+              const benchmarkText = await benchmarkResponse.text();
+              console.log('Benchmark response preview:', benchmarkText.substring(0, 200));
+              console.log('Benchmark response length:', benchmarkText.length);
+            } else {
+              console.log('Benchmark response not ok, trying to get error text...');
+              try {
+                const errorText = await benchmarkResponse.text();
+                console.log('Benchmark error response:', errorText.substring(0, 500));
+              } catch (e) {
+                console.log('Could not read error response:', e);
+              }
+            }
+          } catch (error) {
+            console.error('Benchmark fetch error:', error);
           }
         }
-      } catch (error) {
-        console.error('Benchmark fetch error:', error);
+      } else {
+        console.log('Data index response not ok, trying to get error text...');
+        try {
+          const errorText = await indexResponse.text();
+          console.log('Data index error response:', errorText.substring(0, 500));
+        } catch (e) {
+          console.log('Could not read error response:', e);
+        }
       }
+    } catch (error) {
+      console.error('Data index fetch error:', error);
     }
   } catch (error) {
     console.error('Debug error:', error);
