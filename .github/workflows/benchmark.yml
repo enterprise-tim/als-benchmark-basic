@@ -376,7 +376,7 @@ jobs:
 Generated on: $(date -u)
 
 ## Contents
-- results/ - Raw benchmark data for each Node.js version
+- \`results/\` - Raw benchmark data for each Node.js version
 
 ## Usage
 Download this release and extract the contents to use with the async-node-stats application.
