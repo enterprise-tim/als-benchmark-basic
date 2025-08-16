@@ -42,14 +42,14 @@ const VersionAnalysis = () => {
   const calculateImprovement = (versions) => {
     if (versions.length < 2) return "0%"
     
-      const sortedVersions = [...versions].sort((a, b) => (a.avgOverheadPercent || 0) - (b.avgOverheadPercent || 0))
-  const best = sortedVersions[0].avgOverheadPercent || 0
-  const worst = sortedVersions[sortedVersions.length - 1].avgOverheadPercent || 0
-  
-  if (worst === 0) return "0%"
-  
-  const improvement = ((worst - best) / Math.abs(worst)) * 100
-  return `${improvement.toFixed(1)}%`
+    const sortedVersions = [...versions].sort((a, b) => (a.avgOverhead || 0) - (b.avgOverhead || 0))
+    const best = sortedVersions[0].avgOverhead || 0
+    const worst = sortedVersions[sortedVersions.length - 1].avgOverhead || 0
+    
+    if (worst === 0) return "0%"
+    
+    const improvement = ((worst - best) / Math.abs(worst)) * 100
+    return `${improvement.toFixed(1)}%`
   }
 
   useEffect(() => {
@@ -80,29 +80,29 @@ const VersionAnalysis = () => {
         
         // Transform the data to match the expected format
         const transformedData = {
-          versions: data.comparisons.map(v => ({
-            version: v.nodeVersion,
-            basicOverhead: v.avgOverheadPercent || 0,
-            nestedOverhead: v.avgNestedOverheadPercent || 0,
-            memoryOverhead: (v.totalMemoryOverheadBytes || 0) / (1024 * 1024), // Convert bytes to MB
-            nestedMemoryOverhead: (v.totalNestedMemoryOverheadBytes || 0) / (1024 * 1024), // Convert bytes to MB
-            // Calculate baseline data from overhead percentages
-            baselineTime: null, // Will calculate from individual benchmark files if needed
-            baselineMemory: 0, // Will calculate from individual benchmark files if needed
+          versions: data.versions.map(v => ({
+            version: v.version,
+            basicOverhead: v.avgOverhead || 0,
+            nestedOverhead: v.avgNestedOverhead || 0,
+            memoryOverhead: v.memoryOverheadMB || 0, // Already in MB
+            nestedMemoryOverhead: 0, // Not available in current data structure
+            // Use the new baseline data from the script
+            baselineTime: v.baselineData?.avgExecutionTime || null,
+            baselineMemory: v.baselineData?.avgMemoryUsage || 0,
             status: "stable",
-            testDate: new Date().toISOString(), // Use current date since not available
-            benchmarkCount: (v.traditionalTestCount || 0) + (v.distributedTestCount || 0),
-            iterations: v.iterations || 1, // Use actual iterations from JSON data
-            benchmarks: v.testResults || []
+            testDate: v.testDate || new Date().toISOString(),
+            benchmarkCount: v.benchmarkCount || 0,
+            iterations: v.iterations || 1,
+            benchmarks: v.benchmarks || []
           })),
           summary: {
-            bestVersion: data.comparisons.reduce((best, v) => 
-              (v.avgOverheadPercent || 0) < (best.avgOverheadPercent || 0) ? v : best
-            ).nodeVersion,
-            worstVersion: data.comparisons.reduce((worst, v) => 
-              (v.avgOverheadPercent || 0) > (worst.avgOverheadPercent || 0) ? v : worst
-            ).nodeVersion,
-            improvement: calculateImprovement(data.comparisons),
+            bestVersion: data.versions.reduce((best, v) => 
+              (v.avgOverhead || 0) < (best.avgOverhead || 0) ? v : best
+            ).version,
+            worstVersion: data.versions.reduce((worst, v) => 
+              (v.avgOverhead || 0) > (worst.avgOverhead || 0) ? v : worst
+            ).version,
+            improvement: calculateImprovement(data.versions),
             trend: "improving"
           }
         }
@@ -436,21 +436,21 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                 📊 Understanding the Metrics
               </Typography>
               
-                             {/* Baseline Explanation */}
-               <Paper elevation={1} sx={{ p: 2, mb: 3, backgroundColor: '#e8f5e8' }}>
-                 <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#2e7d32', mb: 1 }}>
-                   🎯 What is the Baseline?
-                 </Typography>
-                 <Typography variant="body2" color="text.secondary">
-                   All performance metrics compare AsyncLocalStorage performance against the <strong>same code executed without AsyncLocalStorage</strong>.
-                 </Typography>
-                 <Typography variant="body2" color="text.secondary">
-                   <strong>Baseline = 0% overhead</strong> (the fastest possible execution)
-                 </Typography>
-                 <Typography variant="body2" color="text.secondary">
-                   <strong>Baseline Column:</strong> Shows actual execution time and memory usage without AsyncLocalStorage for direct comparison.
-                 </Typography>
-               </Paper>
+              {/* Baseline Explanation */}
+              <Paper elevation={1} sx={{ p: 2, mb: 3, backgroundColor: '#e8f5e8' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#2e7d32', mb: 1 }}>
+                  🎯 What is the Baseline?
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  All performance metrics compare AsyncLocalStorage performance against the <strong>same code executed without AsyncLocalStorage</strong>.
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Baseline = 0% overhead</strong> (the fastest possible execution)
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Baseline Column:</strong> Shows actual execution time and memory usage without AsyncLocalStorage for direct comparison.
+                </Typography>
+              </Paper>
               
               <Grid container spacing={3}>
                 <Grid item xs={12} md={4}>
@@ -461,7 +461,7 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                     <strong>What it measures:</strong> How much slower AsyncLocalStorage makes your code compared to the same code without AsyncLocalStorage.
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    <strong>Example:</strong> 50% overhead means AsyncLocalStorage makes your code 1.5x slower (50% slower than baseline).
+                    <strong>Example:</strong> 50% overhead means AsyncLocalStorage makes your code 1.5x slower than baseline (50% slower than baseline).
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     <strong>Baseline:</strong> Code execution time without AsyncLocalStorage.
@@ -582,17 +582,17 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                   {versionData && (
                     <TableContainer component={Paper} elevation={1}>
                       <Table>
-                                                  <TableHead>
-                            <TableRow>
-                              <TableCell><strong>Node.js Version</strong></TableCell>
-                              <TableCell align="right"><strong>Baseline</strong></TableCell>
-                              <TableCell align="right"><strong>Basic ALS Overhead</strong></TableCell>
-                              <TableCell align="right"><strong>Nested ALS Overhead</strong></TableCell>
-                              <TableCell align="right"><strong>Memory Consumption</strong></TableCell>
-                              <TableCell align="center"><strong>Iterations</strong></TableCell>
-                              <TableCell align="center"><strong>Test Date</strong></TableCell>
-                            </TableRow>
-                          </TableHead>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell><strong>Node.js Version</strong></TableCell>
+                            <TableCell align="right"><strong>Baseline</strong></TableCell>
+                            <TableCell align="right"><strong>Basic ALS Overhead</strong></TableCell>
+                            <TableCell align="right"><strong>Nested ALS Overhead</strong></TableCell>
+                            <TableCell align="right"><strong>Memory Consumption</strong></TableCell>
+                            <TableCell align="center"><strong>Iterations</strong></TableCell>
+                            <TableCell align="center"><strong>Test Date</strong></TableCell>
+                          </TableRow>
+                        </TableHead>
                         <TableBody>
                           {versionData.versions.map((version, index) => (
                             <TableRow key={index}>
@@ -770,104 +770,6 @@ Node.js v24.6.0 represents the culmination of years of AsyncLocalStorage evoluti
                           </Typography>
                         </Grid>
                       </Grid>
-                    </Paper>
-                  )}
-
-                  {/* Detailed Benchmark Breakdown */}
-                  {versionData && (
-                    <Paper elevation={1} sx={{ p: 3, mt: 3, backgroundColor: '#fff8e1' }}>
-                      <Typography variant="h6" gutterBottom sx={{ color: '#f57c00' }}>
-                        🔍 Detailed Benchmark Breakdown
-                      </Typography>
-                      <Typography variant="body2" paragraph sx={{ mb: 3 }}>
-                        Each version was tested with {versionData.versions[0]?.benchmarkCount || 0} different scenarios, each run {versionData.versions[0]?.iterations || 1} times to measure AsyncLocalStorage performance:
-                      </Typography>
-                      
-                      {/* Benchmark Test Explanation */}
-                      <Paper elevation={1} sx={{ p: 2, mb: 3, backgroundColor: '#e3f2fd' }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1976d2', mb: 1 }}>
-                          📋 What These Tests Measure
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Small/Medium/Large Data:</strong> Tests AsyncLocalStorage with different amounts of stored data (1KB, 10KB, 100KB)
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>+ Async:</strong> Tests AsyncLocalStorage performance during async operations (setTimeout, promises, etc.)
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Overhead:</strong> How much slower AsyncLocalStorage makes your code compared to not using it
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Nested Overhead:</strong> Performance impact when using multiple nested AsyncLocalStorage contexts
-                        </Typography>
-                      </Paper>
-
-                      {/* Memory Metrics Explanation */}
-                      <Paper elevation={1} sx={{ p: 2, mb: 3, backgroundColor: '#fff3e0' }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#f57c00', mb: 1 }}>
-                          💾 Understanding Memory Metrics
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" paragraph>
-                          <strong>Memory Usage vs. Baseline:</strong> The memory numbers show how much memory AsyncLocalStorage operations consume compared to the same operations without AsyncLocalStorage.
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" paragraph>
-                          <strong>Positive Values:</strong> Indicate AsyncLocalStorage uses MORE memory than the baseline (expected behavior)
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" paragraph>
-                          <strong>Negative Values:</strong> Indicate AsyncLocalStorage uses LESS memory than the baseline (can happen due to V8 optimizations, garbage collection timing, or measurement variations)
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Note:</strong> Memory measurements can vary between runs due to V8's dynamic memory management and garbage collection timing.
-                        </Typography>
-                      </Paper>
-
-                      {versionData.versions.map((version, versionIndex) => (
-                        <Box key={versionIndex} sx={{ mb: 3 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#f57c00', mb: 2 }}>
-                            Node.js v{version.version} - {version.benchmarkCount} Tests × {version.iterations || 1} Iterations
-                          </Typography>
-                          <Grid container spacing={2}>
-                            {version.benchmarks?.map((benchmark, benchIndex) => (
-                              <Grid item xs={12} md={6} key={benchIndex}>
-                                <Paper elevation={1} sx={{ p: 2, backgroundColor: '#fff' }}>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                    {benchmark.name}
-                                  </Typography>
-                                  <Grid container spacing={1}>
-                                    <Grid item xs={4}>
-                                      <Typography variant="caption" color="text.secondary">
-                                        Overhead:
-                                      </Typography>
-                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {(benchmark.overheadPercent || 0).toFixed(1)}%
-                                      </Typography>
-                                    </Grid>
-                                    <Grid item xs={4}>
-                                      <Typography variant="caption" color="text.secondary">
-                                        Nested:
-                                      </Typography>
-                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {(benchmark.nestedOverheadPercent || 0).toFixed(1)}%
-                                      </Typography>
-                                    </Grid>
-                                    <Grid item xs={4}>
-                                      <Typography variant="caption" color="text.secondary">
-                                        Memory:
-                                      </Typography>
-                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {((benchmark.memoryOverheadBytes || 0) / (1024 * 1024)).toFixed(1)} MB
-                                      </Typography>
-                                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                                        {(benchmark.memoryOverheadBytes || 0) > 0 ? 'Overhead' : 'Difference'}
-                                      </Typography>
-                                    </Grid>
-                                  </Grid>
-                                </Paper>
-                              </Grid>
-                            ))}
-                          </Grid>
-                        </Box>
-                      ))}
                     </Paper>
                   )}
 

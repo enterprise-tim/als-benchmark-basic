@@ -21,7 +21,7 @@ import {
   BarChart as BarChartIcon,
 } from '@mui/icons-material'
 import PerformanceChart from './PerformanceChart'
-import { getPerformanceComparison, getPerformanceSummary, debugDataLoading } from '../services/benchmarkData'
+import { getPerformanceComparison, getPerformanceSummary } from '../services/benchmarkData'
 
 const Performance = () => {
   const [performanceData, setPerformanceData] = useState([])
@@ -36,14 +36,15 @@ const Performance = () => {
         setIsLoading(true)
         setError(null)
         
-        // Debug the first version to see what's happening
-        await debugDataLoading('24.6.0')
-        
         const data = await getPerformanceComparison()
         setPerformanceData(data)
         
-        const summaryData = getPerformanceSummary(data)
-        setSummary(summaryData)
+        if (data.length === 0) {
+          setError('No benchmark data available. Please run the benchmarks first or check if the data files exist.')
+        } else {
+          const summaryData = getPerformanceSummary(data)
+          setSummary(summaryData)
+        }
       } catch (err) {
         console.error('Error loading performance data:', err)
         setError(err.message)
@@ -124,6 +125,38 @@ const Performance = () => {
         />
       </Box>
 
+      {/* No Data Available Message */}
+      {!isLoading && !error && performanceData.length === 0 && (
+        <Paper elevation={1} sx={{ p: 4, backgroundColor: '#fff3e0', mb: 4 }}>
+          <Box display="flex" alignItems="center" sx={{ mb: 2 }}>
+            <WarningIcon sx={{ color: '#f57c00', marginRight: 1 }} />
+            <Typography variant="h6" sx={{ color: '#e65100' }}>
+              No Benchmark Data Available
+            </Typography>
+          </Box>
+          <Typography variant="body1" paragraph>
+            The performance charts are empty because no benchmark data has been generated yet.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" paragraph>
+            To see performance data:
+          </Typography>
+          <Box component="ul" sx={{ pl: 3, mb: 2 }}>
+            <Typography component="li" variant="body2" color="text.secondary">
+              Run the benchmark tests using the scripts in the <code>scripts/</code> directory
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              Ensure the results are saved to the <code>results/</code> directory
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              Check that a <code>data-index.json</code> file exists with the correct file mappings
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            The application will automatically detect and load benchmark data once it's available.
+          </Typography>
+        </Paper>
+      )}
+
       {/* Simple Overhead Tests Section */}
       <Typography variant="h5" gutterBottom sx={{ color: '#6750a4', mb: 3 }}>
         Simple AsyncLocalStorage Overhead Tests
@@ -145,22 +178,31 @@ const Performance = () => {
                 This chart shows the basic overhead of using AsyncLocalStorage compared to not using it. 
                 Values represent the percentage increase in execution time.
               </Typography>
-              {performanceData.length > 0 && (
+              {performanceData.length > 0 ? (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     <strong>Key Findings:</strong>
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                    {performanceData.slice(0, 3).map((item, index) => (
-                      <Chip
-                        key={index}
-                        label={`${item.version}: ${item.basicOverhead.reduce((sum, b) => sum + b.overhead, 0) / item.basicOverhead.length > 0 ? '+' : ''}${(item.basicOverhead.reduce((sum, b) => sum + b.overhead, 0) / item.basicOverhead.length).toFixed(2)}%`}
-                        size="small"
-                        color={item.basicOverhead.reduce((sum, b) => sum + b.overhead, 0) / item.basicOverhead.length < 5 ? 'success' : 'warning'}
-                      />
-                    ))}
+                    {performanceData.slice(0, 3).map((item, index) => {
+                      const avgOverhead = item.basicOverhead.length > 0 
+                        ? item.basicOverhead.reduce((sum, b) => sum + b.overhead, 0) / item.basicOverhead.length 
+                        : 0;
+                      return (
+                        <Chip
+                          key={index}
+                          label={`${item.version}: ${avgOverhead > 0 ? '+' : ''}${avgOverhead.toFixed(2)}%`}
+                          size="small"
+                          color={Math.abs(avgOverhead) < 5 ? 'success' : 'warning'}
+                        />
+                      );
+                    })}
                   </Box>
                 </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  No benchmark data available to display findings.
+                </Typography>
               )}
             </CardContent>
           </Card>
@@ -182,22 +224,31 @@ const Performance = () => {
                 <strong>What is "Nested ALS"?</strong> When you have one AsyncLocalStorage.run() 
                 call inside another, creating multiple layers of context.
               </Alert>
-              {performanceData.length > 0 && (
+              {performanceData.length > 0 ? (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     <strong>Key Findings:</strong>
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                    {performanceData.slice(0, 3).map((item, index) => (
-                      <Chip
-                        key={index}
-                        label={`${item.version}: +${(item.nestedOverhead.reduce((sum, b) => sum + b.overhead, 0) / item.nestedOverhead.length).toFixed(2)}%`}
-                        size="small"
-                        color="error"
-                      />
-                    ))}
+                    {performanceData.slice(0, 3).map((item, index) => {
+                      const avgNestedOverhead = item.nestedOverhead.length > 0 
+                        ? item.nestedOverhead.reduce((sum, b) => sum + b.overhead, 0) / item.nestedOverhead.length 
+                        : 0;
+                      return (
+                        <Chip
+                          key={index}
+                          label={`${item.version}: ${avgNestedOverhead > 0 ? '+' : ''}${avgNestedOverhead.toFixed(2)}%`}
+                          size="small"
+                          color={Math.abs(avgNestedOverhead) < 10 ? 'warning' : 'error'}
+                        />
+                      );
+                    })}
                   </Box>
                 </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  No benchmark data available to display findings.
+                </Typography>
               )}
             </CardContent>
           </Card>
@@ -227,12 +278,16 @@ const Performance = () => {
                 This chart shows AsyncLocalStorage performance in distributed scenarios including worker threads, 
                 cluster mode, and multi-tenant applications.
               </Typography>
-              {performanceData.length > 0 && (
+              {performanceData.length > 0 ? (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="body2" color="text.secondary">
                     <strong>Versions tested:</strong> {performanceData.map(d => d.version).join(', ')}
                   </Typography>
                 </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  No benchmark data available to display version information.
+                </Typography>
               )}
             </CardContent>
           </Card>

@@ -61,8 +61,11 @@ const Memory = () => {
     
     const totalVersions = memoryData.length
     const avgMemoryOverhead = memoryData.reduce((sum, item) => {
-      const avg = item.memoryOverhead.reduce((s, m) => s + Math.abs(m), 0) / item.memoryOverhead.length
-      return sum + avg
+      if (item.memoryOverhead && item.memoryOverhead.length > 0) {
+        const avg = item.memoryOverhead.reduce((s, m) => s + Math.abs(m), 0) / item.memoryOverhead.length
+        return sum + avg
+      }
+      return sum + Math.abs(item.totalMemoryOverhead || 0)
     }, 0) / totalVersions
     
     const avgMemoryGrowth = memoryData.reduce((sum, item) => {
@@ -165,7 +168,9 @@ const Memory = () => {
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                     {memoryData.slice(0, 5).map((item, index) => {
-                      const avgOverhead = item.memoryOverhead.reduce((sum, m) => sum + Math.abs(m), 0) / item.memoryOverhead.length
+                      const avgOverhead = item.memoryOverhead && item.memoryOverhead.length > 0
+                        ? item.memoryOverhead.reduce((sum, m) => sum + Math.abs(m), 0) / item.memoryOverhead.length
+                        : Math.abs(item.totalMemoryOverhead || 0);
                       return (
                         <Chip
                           key={index}

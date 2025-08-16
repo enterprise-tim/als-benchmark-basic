@@ -58,16 +58,21 @@ async function generateVersionComparison() {
     try {
       // Check if this version has iteration subdirectories
       const files = await fs.readdir(versionPath);
+      console.log(`Files in ${versionDir}:`, files);
       let hasIterations = false;
+      let iterationDirs = [];
+      
       for (const file of files) {
         if (file.startsWith('iteration_')) {
           const stat = await fs.stat(path.join(versionPath, file));
           if (stat.isDirectory()) {
             hasIterations = true;
-            break;
+            iterationDirs.push(file);
+            console.log(`Found iteration directory: ${file}`);
           }
         }
       }
+      console.log(`${versionDir} has iterations: ${hasIterations}, found: ${iterationDirs.length} iteration directories`);
       
       let allBenchmarkData = [];
       let allMemoryData = [];
@@ -77,28 +82,39 @@ async function generateVersionComparison() {
         // Process multiple iterations
         console.log(`Processing ${versionDir} with iterations...`);
         
-        for (const file of files.sort()) {
-          if (file.startsWith('iteration_') && await fs.stat(path.join(versionPath, file)).then(stat => stat.isDirectory())) {
-            const iterationPath = path.join(versionPath, file);
-            const iterationFiles = await fs.readdir(iterationPath);
-            
-            const benchmarkFile = iterationFiles.find(f => f.startsWith('benchmark_') && f.endsWith('.json'));
-            const memoryFile = iterationFiles.find(f => f.startsWith('memory_') && f.endsWith('.json'));
-            
-            if (benchmarkFile) {
-              const benchmarkPath = path.join(iterationPath, benchmarkFile);
-              const benchmarkContent = await fs.readFile(benchmarkPath, 'utf8');
-              const benchmarkData = JSON.parse(benchmarkContent);
-              allBenchmarkData.push(benchmarkData);
-              iterationCount++;
-            }
-            
-            if (memoryFile) {
-              const memoryPath = path.join(iterationPath, memoryFile);
-              const memoryContent = await fs.readFile(memoryPath, 'utf8');
-              const memoryData = JSON.parse(memoryContent);
-              allMemoryData.push(memoryData);
-            }
+        // Sort iteration directories numerically (iteration_01, iteration_02, etc.)
+        iterationDirs.sort((a, b) => {
+          const aNum = parseInt(a.replace('iteration_', ''), 10);
+          const bNum = parseInt(b.replace('iteration_', ''), 10);
+          return aNum - bNum;
+        });
+        
+        for (const iterationDir of iterationDirs) {
+          const iterationPath = path.join(versionPath, iterationDir);
+          const iterationFiles = await fs.readdir(iterationPath);
+          
+          const benchmarkFile = iterationFiles.find(f => f.startsWith('benchmark_') && f.endsWith('.json'));
+          const memoryFile = iterationFiles.find(f => f.startsWith('memory_') && f.endsWith('.json'));
+          
+          if (benchmarkFile) {
+            const benchmarkPath = path.join(iterationPath, benchmarkFile);
+            const benchmarkContent = await fs.readFile(benchmarkPath, 'utf8');
+            const benchmarkData = JSON.parse(benchmarkContent);
+            console.log(`Loaded benchmark data from ${iterationDir}/${benchmarkFile}:`, {
+              nodeVersion: benchmarkData.nodeVersion,
+              hasBenchmarks: !!benchmarkData.benchmarks,
+              benchmarkCount: benchmarkData.benchmarks?.length || 0,
+              sampleBenchmark: benchmarkData.benchmarks?.[0] ? Object.keys(benchmarkData.benchmarks[0]) : 'No benchmarks'
+            });
+            allBenchmarkData.push(benchmarkData);
+            iterationCount++;
+          }
+          
+          if (memoryFile) {
+            const memoryPath = path.join(iterationPath, memoryFile);
+            const memoryContent = await fs.readFile(memoryPath, 'utf8');
+            const memoryData = JSON.parse(memoryContent);
+            allMemoryData.push(memoryData);
           }
         }
       } else {
@@ -110,6 +126,12 @@ async function generateVersionComparison() {
           const benchmarkPath = path.join(versionPath, benchmarkFile);
           const benchmarkContent = await fs.readFile(benchmarkPath, 'utf8');
           const benchmarkData = JSON.parse(benchmarkContent);
+          console.log(`Loaded single benchmark data from ${benchmarkFile}:`, {
+            nodeVersion: benchmarkData.nodeVersion,
+            hasBenchmarks: !!benchmarkData.benchmarks,
+            benchmarkCount: benchmarkData.benchmarks?.length || 0,
+            sampleBenchmark: benchmarkData.benchmarks?.[0] ? Object.keys(benchmarkData.benchmarks[0]) : 'No benchmarks'
+          });
           allBenchmarkData.push(benchmarkData);
           iterationCount = 1;
         }
@@ -138,15 +160,36 @@ async function generateVersionComparison() {
       const allBaselineMemories = [];
       
       for (const benchmarkData of allBenchmarkData) {
-        // Filter benchmarks to only include standard overhead benchmarks (exclude asyncContextFrame types)
-        const standardBenchmarks = benchmarkData.benchmarks.filter(b => b.overhead && typeof b.overhead.timePercent === 'number');
+        // Filter benchmarks to only include standard overhead benchmarks
+        // Handle both old format (overhead.timePercent) and new format (overheadPercent)
+        const standardBenchmarks = benchmarkData.benchmarks?.filter(b => {
+          if (b.overhead && typeof b.overhead.timePercent === 'number') {
+            return true; // Old format
+          }
+          if (typeof b.overheadPercent === 'number') {
+            return true; // New format
+          }
+          return false;
+        }) || [];
         
-        if (standardBenchmarks.length > 0) {
-          allStandardBenchmarks.push(...standardBenchmarks);
+        // Also check for testResults structure
+        const testResults = benchmarkData.testResults?.filter(b => {
+          if (typeof b.overheadPercent === 'number') {
+            return true; // New format
+          }
+          return false;
+        }) || [];
+        
+        const allBenchmarks = [...standardBenchmarks, ...testResults];
+        
+        if (allBenchmarks.length > 0) {
+          allStandardBenchmarks.push(...allBenchmarks);
           
           // Collect overhead data for statistical analysis
-          for (const benchmark of standardBenchmarks) {
-            allMemoryOverheads.push(benchmark.overhead.memoryRSSBytes / 1024 / 1024); // Convert to MB
+          for (const benchmark of allBenchmarks) {
+            // Handle both old and new data formats
+            const memoryOverhead = benchmark.overhead?.memoryRSSBytes || benchmark.memoryOverheadBytes || 0;
+            allMemoryOverheads.push(memoryOverhead / 1024 / 1024); // Convert to MB
             
             if (benchmark.withoutALS?.duration) {
               allBaselineTimes.push(benchmark.withoutALS.duration);
@@ -158,14 +201,61 @@ async function generateVersionComparison() {
         }
       }
       
+      console.log(`Found ${allStandardBenchmarks.length} standard benchmarks across ${iterationCount} iterations for ${nodeVersion}`);
+      console.log(`Benchmark data structure:`, allStandardBenchmarks.length > 0 ? Object.keys(allStandardBenchmarks[0]) : 'No benchmarks found');
+      console.log(`First benchmark data:`, allStandardBenchmarks.length > 0 ? allStandardBenchmarks[0] : 'No benchmarks');
+      
+      if (allStandardBenchmarks.length === 0) {
+        console.log(`No standard benchmarks found for ${versionDir}`);
+        // Try alternative field names
+        const alternativeBenchmarks = allBenchmarkData.flatMap(bd => {
+          if (bd.testResults && Array.isArray(bd.testResults)) {
+            console.log(`Found testResults with ${bd.testResults.length} items`);
+            return bd.testResults;
+          }
+          if (bd.benchmarks && Array.isArray(bd.benchmarks)) {
+            console.log(`Found benchmarks with ${bd.benchmarks.length} items`);
+            return bd.benchmarks;
+          }
+          console.log(`No recognizable benchmark structure in:`, Object.keys(bd));
+          return [];
+        });
+        
+        if (alternativeBenchmarks.length > 0) {
+          console.log(`Using alternative benchmark structure with ${alternativeBenchmarks.length} items`);
+          allStandardBenchmarks.push(...alternativeBenchmarks);
+        }
+      }
+      
       if (allStandardBenchmarks.length === 0) {
         console.log(`No standard benchmarks found for ${versionDir}`);
         continue;
       }
       
       // Calculate statistical measures across iterations
-      const overheads = allStandardBenchmarks.map(b => b.overhead.timePercent);
-      const nestedOverheads = allStandardBenchmarks.map(b => b.overhead.nestedTimePercent);
+      const overheads = allStandardBenchmarks.map(b => {
+        // Handle both old and new data formats
+        if (b.overhead && typeof b.overhead.timePercent === 'number') {
+          return b.overhead.timePercent; // Old format
+        }
+        if (typeof b.overheadPercent === 'number') {
+          return b.overheadPercent; // New format
+        }
+        return 0;
+      }).filter(h => h !== 0); // Filter out invalid values
+      
+      const nestedOverheads = allStandardBenchmarks.map(b => {
+        // Handle both old and new data formats
+        if (b.overhead && typeof b.overhead.nestedTimePercent === 'number') {
+          return b.overhead.nestedTimePercent; // Old format
+        }
+        if (typeof b.nestedOverheadPercent === 'number') {
+          return b.nestedOverheadPercent; // New format
+        }
+        return 0;
+      }).filter(h => h !== 0); // Filter out invalid values
+      
+      console.log(`Processing ${overheads.length} overhead values and ${nestedOverheads.length} nested overhead values for ${nodeVersion}`);
       
       // Calculate mean, standard deviation, min, max for overhead
       const avgOverhead = overheads.reduce((sum, val) => sum + val, 0) / overheads.length;
@@ -219,15 +309,34 @@ async function generateVersionComparison() {
         baselineMemory: parseFloat(avgBaselineMemory.toFixed(2)),
         benchmarkCount: allStandardBenchmarks.length,
         testDate: allBenchmarkData[0].timestamp,
-        benchmarks: allStandardBenchmarks.map(b => ({
-          name: b.name,
-          overhead: b.overhead.timePercent,
-          nestedOverhead: b.overhead.nestedTimePercent,
-          memoryMB: b.overhead.memoryRSSBytes / 1024 / 1024,
-          baselineTime: b.withoutALS?.duration || 0,
-          baselineMemory: (b.withoutALS?.memoryDelta?.rss || 0) / (1024 * 1024)
-        }))
+        benchmarks: allStandardBenchmarks.map(b => {
+          // Handle both old and new data formats
+          const overhead = b.overhead?.timePercent || b.overheadPercent || 0;
+          const nestedOverhead = b.overhead?.nestedTimePercent || b.nestedOverheadPercent || 0;
+          const memoryOverhead = b.overhead?.memoryRSSBytes || b.memoryOverheadBytes || 0;
+          
+          return {
+            name: b.name,
+            overhead: overhead,
+            nestedOverhead: nestedOverhead,
+            memoryMB: memoryOverhead / 1024 / 1024,
+            baselineTime: b.withoutALS?.duration || 0,
+            baselineMemory: (b.withoutALS?.memoryDelta?.rss || 0) / (1024 * 1024)
+          };
+        }),
+        // Add baseline data for the VersionAnalysis component
+        baselineData: {
+          avgExecutionTime: parseFloat(avgBaselineTime.toFixed(2)),
+          avgMemoryUsage: parseFloat(avgBaselineMemory.toFixed(2)),
+          executionTimeStdDev: allBaselineTimes.length > 1 ? 
+            parseFloat(Math.sqrt(allBaselineTimes.reduce((sum, time) => sum + Math.pow(time - avgBaselineTime, 2), 0) / allBaselineTimes.length).toFixed(2)) : 0,
+          memoryUsageStdDev: allBaselineMemories.length > 1 ? 
+            parseFloat(Math.sqrt(allBaselineMemories.reduce((sum, mem) => sum + Math.pow(mem - avgBaselineMemory, 2), 0) / allBaselineMemories.length).toFixed(2)) : 0
+        }
       };
+      
+      console.log(`Created version info for ${nodeVersion}: ${iterationCount} iterations, ${allStandardBenchmarks.length} benchmarks`);
+      console.log(`Iteration count in versionInfo: ${versionInfo.iterations}`);
       
       // Aggregate memory analysis across iterations if available
       if (allMemoryData.length > 0) {
@@ -367,6 +476,7 @@ async function generateVersionComparison() {
   console.log('Version comparison HTML generated: docs/version-comparison.html');
   
   // Write JSON data for the HTML to consume
+  console.log('Writing JSON with versions:', comparisonData.versions.map(v => ({ version: v.version, iterations: v.iterations })));
   await fs.writeFile(path.join(docsDir, 'version-comparison.json'), JSON.stringify(comparisonData, null, 2));
   console.log('Version comparison JSON generated: docs/version-comparison.json');
   
