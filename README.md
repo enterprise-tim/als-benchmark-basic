@@ -10,34 +10,9 @@ This project provides comprehensive performance analysis of AsyncLocalStorage ac
 
 - **Performance Analysis**: Compare AsyncLocalStorage overhead across Node.js versions
 - **Memory Analysis**: Analyze memory usage patterns and detect potential leaks
-- **Interactive Charts**: Visualize performance data with Chart.js
 - **Version Comparison**: Compare results across Node.js 16.20.2 through 24.6.0
-- **GitHub Pages Ready**: Deploy directly to GitHub Pages for easy sharing
-
-## React App
-
-The React application provides an interactive interface to explore the benchmark results:
-
-- **Overview**: Summary of all benchmark results
-- **Performance**: Performance comparison charts across Node.js versions
-- **Memory**: Memory usage analysis and comparison
-- **Version Analysis**: Detailed analysis of specific versions
-- **Recommendations**: Best practices and usage recommendations
-
-### Data Loading
-
-The app loads benchmark data directly from JSON files in the `results/` directory:
-
-1. **Data Index**: `public/data-index.json` maps Node.js versions to their benchmark and memory test files
-2. **Benchmark Files**: Located in `results/versions/node_X_X_X/` directories
-3. **Memory Files**: Memory test results for each version
-
-### Chart Components
-
-- **PerformanceChart**: Displays performance overhead comparisons
-- **MemoryChart**: Shows memory usage patterns
-- **Toggle between line and bar charts**
-- **Responsive design** for different screen sizes
+- **Automated Testing**: GitHub Actions workflow for continuous benchmark execution
+- **Release Management**: Automatic release creation with benchmark results
 
 ## Development
 
@@ -50,46 +25,62 @@ The app loads benchmark data directly from JSON files in the `results/` director
 
 ```bash
 # Clone the repository
-git clone https://github.com/tobrien/async-node-stats.git
-cd async-node-stats
+git clone https://github.com/tobrien/als-benchmark-basic.git
+cd als-benchmark-basic
 
 # Install dependencies
 npm install
-
-# Start development server
-npm run dev
 ```
 
-The app will be available at `http://localhost:5173` (or the next available port).
-
-### Building
+### Running Benchmarks
 
 ```bash
-# Build for production
-npm run build
+# Run performance benchmarks
+npm run benchmark
 
-# Preview production build
-npm run preview
+# Run memory tests
+npm run memory-test
+
+# Run both benchmarks and memory tests
+npm run test-all
+
+# Run optimized benchmarks (with additional flags)
+npm run benchmark-optimized
+
+# Run verbose memory tests
+npm run memory-test-verbose
 ```
 
-## Deployment
+### Multi-iteration Testing
 
-### GitHub Pages
+```bash
+# Run multiple iterations for more accurate results
+npm run multi-iteration
+```
 
-The app is configured for GitHub Pages deployment:
+## GitHub Actions
 
-1. **Base Path**: Configured for `/async-node-stats/` repository path
-2. **Static Assets**: All benchmark data is served as static files
-3. **SPA Routing**: Handles client-side routing properly
+The project includes automated benchmark execution via GitHub Actions:
 
-### Manual Deployment
+### Workflow Triggers
 
-To deploy to other static hosting:
+- **Push to `performance-test` branch**: Runs benchmarks on all configured Node.js versions
+- **Weekly Schedule**: Runs every Sunday at 2 AM UTC
+- **Manual Dispatch**: Can be triggered manually with custom parameters
 
-1. Run `npm run build`
-2. Upload the `dist/` directory contents
-3. Ensure the `results/` directory is accessible
-4. Update the base path in `vite.config.js` if needed
+### Workflow Features
+
+- **Matrix Strategy**: Tests multiple Node.js versions in parallel
+- **Memory Testing**: Optional memory profiling tests
+- **Artifact Upload**: Results are uploaded as GitHub artifacts
+- **Release Creation**: Automatic release creation with benchmark results
+
+### Configuration
+
+Benchmark parameters can be configured via workflow dispatch inputs:
+
+- `iterations`: Number of iterations per version (default: 2)
+- `run_memory_tests`: Whether to run memory profiling tests (default: true)
 
 ## Data Structure
 
@@ -133,6 +124,21 @@ Each memory file contains:
   ]
 }
 ```
+
+## Results
+
+Benchmark results are automatically published as GitHub releases containing:
+
+- Raw benchmark data for each tested Node.js version
+- Memory profiling results
+- Performance metrics and timing data
+- Release manifest with metadata
+
+### Accessing Results
+
+1. Go to the [Releases](https://github.com/tobrien/als-benchmark-basic/releases) page
+2. Download the latest `benchmark-results.tar.gz` file
+3. Extract the archive to access the benchmark data
 
 ## Contributing
 

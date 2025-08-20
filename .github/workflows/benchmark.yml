@@ -2,7 +2,7 @@ name: AsyncLocalStorage Benchmark
 
 on:
   push:
-    branches: [ performance-test ]
+    branches: [ main ]
   schedule:
     # Run weekly on Sundays at 2 AM UTC
     - cron: '0 2 * * 0'
@@ -99,114 +99,100 @@ jobs:
       run: |
         echo "🔍 Debug information:"
         echo "Matrix node-version: ${{ matrix.node-version }}"
-        echo "Current working directory: $(pwd)"
-        echo "Node.js version: $(node --version)"
-        echo "NPM version: $(npm --version)"
-        echo "Available scripts:"
-        npm run
-        echo "Matrix strategy info:"
-        echo "Total matrix jobs: ${{ strategy.job-total }}"
-        echo "Current matrix index: ${{ strategy.job-index }}"
+        echo "GitHub run ID: ${{ github.run_id }}"
+        echo "GitHub run number: ${{ github.run_number }}"
+        echo "GitHub ref: ${{ github.ref }}"
+        echo "GitHub event name: ${{ github.event_name }}"
+        echo "GitHub actor: ${{ github.actor }}"
+        echo "GitHub repository: ${{ github.repository }}"
+        echo "GitHub workspace: ${{ github.workspace }}"
+        echo "Runner OS: ${{ runner.os }}"
+        echo "Runner architecture: ${{ runner.arch }}"
+        echo "Runner temp: ${{ runner.temp }}"
+        echo "Runner tool cache: ${{ runner.tool_cache }}"
     
-    - name: Run multi-iteration benchmarks
-      env:
-        NODE_VERSION: ${{ matrix.node-version }}
+    - name: Run benchmark tests
+      id: benchmark
       run: |
-        echo "🚀 Running ${{ github.event.inputs.iterations || 2 }} iterations for Node.js ${{ matrix.node-version }}"
-        echo "📊 Matrix job ${{ strategy.job-index }} of ${{ strategy.job-total }}"
+        echo "🚀 Starting AsyncLocalStorage benchmark for Node.js ${{ matrix.node-version }}"
+        echo "📊 Running with iterations: ${{ github.event.inputs.iterations || '2' }}"
+        echo "🧠 Memory tests enabled: ${{ github.event.inputs.run_memory_tests || 'true' }}"
         
-        # Ensure results directory exists
-        mkdir -p public/results/versions/node_${{ matrix.node-version }}
-        echo "📁 Created results directory: public/results/versions/node_${{ matrix.node-version }}"
+        # Set environment variables for the benchmark
+        export NODE_VERSION="${{ matrix.node-version }}"
+        export ITERATIONS="${{ github.event.inputs.iterations || '2' }}"
+        export RUN_MEMORY_TESTS="${{ github.event.inputs.run_memory_tests || 'true' }}"
+        export GITHUB_RUN_ID="${{ github.run_id }}"
+        export GITHUB_RUN_NUMBER="${{ github.run_number }}"
+        
+        echo "🔧 Environment variables set:"
+        echo "  NODE_VERSION: $NODE_VERSION"
+        echo "  ITERATIONS: $ITERATIONS"
+        echo "  RUN_MEMORY_TESTS: $RUN_MEMORY_TESTS"
+        echo "  GITHUB_RUN_ID: $GITHUB_RUN_ID"
+        echo "  GITHUB_RUN_NUMBER: $GITHUB_RUN_NUMBER"
         
         # Run the benchmark
-        npm run multi-iteration ${{ github.event.inputs.iterations || 2 }}
-        
-        # Verify results were created
-        echo "📊 Benchmark completed, checking results:"
-        ls -la public/results/versions/node_${{ matrix.node-version }}/ || echo "No results directory found"
-        
-    - name: Run memory profiling tests
-      if: ${{ github.event.inputs.run_memory_tests != 'false' }}
-      run: |
-        echo "🧠 Running memory tests for Node.js ${{ matrix.node-version }}"
-        
-        # Ensure results directory exists
-        mkdir -p public/results/versions/node_${{ matrix.node-version }}
-        
-        # Run memory test
-        node --expose-gc src/memory-test.js
-        
-        # Copy memory results to version directory
-        if [ -d "public/results/versions/node_${{ matrix.node-version }}" ]; then
-          mkdir -p "public/results/versions/node_${{ matrix.node-version }}/memory"
-          find public/results -name "memory_*.json" -exec cp {} "public/results/versions/node_${{ matrix.node-version }}/memory/" \;
+        echo "🏃‍♂️ Executing benchmark..."
+        if npm run benchmark; then
+          echo "✅ Benchmark completed successfully"
           
-          echo "📊 Memory test results:"
-          ls -la "public/results/versions/node_${{ matrix.node-version }}/memory/" || echo "No memory results found"
+          # Check what was generated
+          echo "📁 Benchmark results generated:"
+          find results/ -name "*.json" -type f | head -10
+          
+          # Set output for next steps
+          echo "benchmark_success=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Benchmark failed with exit code $?"
+          echo "benchmark_success=false" >> $GITHUB_OUTPUT
+          exit 1
         fi
     
-    - name: Debug before upload
+    - name: Run memory tests (conditional)
+      id: memory_test
+      if: github.event.inputs.run_memory_tests != 'false'
       run: |
-        echo "🔍 Debugging before artifact upload..."
-        echo "Current directory: $(pwd)"
-        echo "Looking for results in public/results/versions/node_${{ matrix.node-version }}/"
+        echo "🧠 Starting memory profiling tests for Node.js ${{ matrix.node-version }}"
         
-        if [ -d "public/results/versions/node_${{ matrix.node-version }}" ]; then
-          echo "✅ Version directory exists"
-          echo "📁 Contents:"
-          ls -la "public/results/versions/node_${{ matrix.node-version }}/"
-          echo "📊 File count: $(find "public/results/versions/node_${{ matrix.node-version }}" -type f | wc -l)"
+        # Set environment variables for memory tests
+        export NODE_VERSION="${{ matrix.node-version }}"
+        export GITHUB_RUN_ID="${{ github.run_id }}"
+        export GITHUB_RUN_NUMBER="${{ github.run_number }}"
+        
+        echo "🔧 Memory test environment variables:"
+        echo "  NODE_VERSION: $NODE_VERSION"
+        echo "  GITHUB_RUN_ID: $GITHUB_RUN_ID"
+        echo "  GITHUB_RUN_NUMBER: $GITHUB_RUN_NUMBER"
+        
+        # Run memory tests
+        echo "🏃‍♂️ Executing memory tests..."
+        if npm run memory-test; then
+          echo "✅ Memory tests completed successfully"
+          
+          # Check what was generated
+          echo "📁 Memory test results generated:"
+          find results/ -name "*memory*" -type f | head -10
+          
+          # Set output for next steps
+          echo "memory_test_success=true" >> $GITHUB_OUTPUT
         else
-          echo "❌ Version directory does not exist!"
-          echo "📋 Available directories in public/results/versions/:"
-          ls -la public/results/versions/ 2>/dev/null || echo "public/results/versions/ does not exist"
-          echo "📋 Available directories in public/results/:"
-          ls -la public/results/ 2>/dev/null || echo "public/results/ does not exist"
-          echo "📋 Available directories in public/:"
-          ls -la public/ 2>/dev/null || echo "public/ does not exist"
+          echo "❌ Memory tests failed with exit code $?"
+          echo "memory_test_success=false" >> $GITHUB_OUTPUT
+          # Don't fail the workflow for memory test failures
         fi
-        
-        # Also check for loose benchmark files
-        echo "🔍 Looking for loose benchmark files..."
-        find . -name "benchmark_*.json" -o -name "memory_*.json" | head -10
     
     - name: Upload benchmark results
       uses: actions/upload-artifact@v4
       with:
         name: benchmark-results-node-${{ matrix.node-version }}
-        path: public/results/versions/node_${{ matrix.node-version }}/
+        path: results/
         retention-days: 30
-        if-no-files-found: warn
-    
-    - name: Generate performance summary
-      run: |
-        echo "## Performance Summary for Node.js ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        VERSION_DIR="public/results/versions/node_${{ matrix.node-version }}"
-        if [ -d "$VERSION_DIR" ]; then
-          echo "### Benchmark Results" >> $GITHUB_STEP_SUMMARY
-          echo "**Files found:** $(ls -1 $VERSION_DIR | wc -l)" >> $GITHUB_STEP_SUMMARY
-          echo "**Contents:**" >> $GITHUB_STEP_SUMMARY
-          ls -la "$VERSION_DIR" >> $GITHUB_STEP_SUMMARY
-          
-          # Show benchmark log if available
-          if [ -f "$VERSION_DIR/benchmark.log" ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Benchmark Log (last 10 lines):**" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -10 "$VERSION_DIR/benchmark.log" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
-        else
-          echo "⚠️ No results directory found for this version" >> $GITHUB_STEP_SUMMARY
-        fi
 
-  compare-versions:
-    runs-on: ubuntu-latest-4-cores
+  create-release:
+    runs-on: ubuntu-latest
     needs: [benchmark]
-    if: always()
+    if: always() && github.ref == 'refs/heads/performance-test'
     
     steps:
     - name: Checkout repository
@@ -235,185 +221,11 @@ jobs:
             if [ -d "$artifact_dir" ]; then
               echo "  📂 $(basename "$artifact_dir"):"
               ls -la "$artifact_dir" | head -10
-              
-              # Check for nested structure
-              if [ -d "$artifact_dir/public" ]; then
-                echo "    📁 Found public/ subdirectory:"
-                find "$artifact_dir/public" -type f | head -5
-              fi
             fi
           done
         else
           echo "❌ No downloaded-results directory found"
         fi
-    
-    - name: Setup Node.js (latest)
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Prepare results directory
-      run: |
-        mkdir -p public/results/versions
-        
-        # Copy all downloaded results to the results directory
-        if [ -d "./downloaded-results" ]; then
-          echo "🔍 Processing downloaded artifacts..."
-          ls -la ./downloaded-results/
-          
-          for artifact_dir in downloaded-results/*/; do
-            if [ -d "$artifact_dir" ]; then
-              artifact_name=$(basename "$artifact_dir")
-              echo "📦 Processing artifact: $artifact_name"
-              
-              # Extract version from artifact name (benchmark-results-node-X.Y.Z)
-              version_name=$(echo "$artifact_name" | sed 's/benchmark-results-node-//')
-              target_dir="public/results/versions/node_$version_name"
-              
-              echo "📁 Target directory: $target_dir"
-              mkdir -p "$target_dir"
-              
-              # Check what's in the artifact
-              echo "📋 Artifact contents:"
-              ls -la "$artifact_dir"
-              
-              # Copy all contents from artifact to target directory
-              # The artifact contains the direct contents of the version directory
-              if [ -d "$artifact_dir" ] && [ "$(ls -A "$artifact_dir")" ]; then
-                echo "📂 Copying direct contents from artifact..."
-                cp -r "$artifact_dir"/* "$target_dir/" 2>/dev/null || true
-              fi
-              
-              echo "✅ Copied to: $target_dir"
-              ls -la "$target_dir" || echo "Target directory is empty"
-            fi
-          done
-        else
-          echo "⚠️ No downloaded artifacts found, checking for existing results..."
-        fi
-        
-        # Check if we have any existing results
-        if [ -d "public/results/versions" ] && [ "$(ls -A public/results/versions)" ]; then
-          echo "Found existing benchmark results:"
-          ls -la public/results/versions/
-          
-          # Show what's in each version directory
-          for version_dir in public/results/versions/node_*; do
-            if [ -d "$version_dir" ]; then
-              echo "Version $version_dir contains:"
-              ls -la "$version_dir"
-            fi
-          done
-        else
-          echo "No benchmark results found, creating placeholder structure..."
-          mkdir -p public/results/versions/placeholder
-          echo '{"message": "No benchmark data available", "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > public/results/versions/placeholder/placeholder.json
-        fi
-        
-        echo "Final results structure:"
-        find public/results/versions -type d | head -20
-    
-    - name: Generate version comparison report
-      run: |
-        echo "🔍 Generating comprehensive version comparison report..."
-        
-        # Debug: Check what's in the results directory
-        echo "📁 Current working directory: $(pwd)"
-        echo "📁 Contents of public/results/versions/:"
-        ls -la public/results/versions/ || echo "Directory not found"
-        
-        echo "📁 Contents of results/versions/ (if exists):"
-        ls -la results/versions/ 2>/dev/null || echo "Directory not found"
-        
-        # Note: We generate docs here for workflow validation, but don't include them in the release
-        echo "🚀 Running: npm run compare-versions"
-        echo "📁 Available scripts:"
-        npm run
-        
-        if npm run compare-versions; then
-          echo "📊 Comparison report generated successfully"
-          echo "📁 Generated files in docs/:"
-          ls -la docs/
-        else
-          echo "⚠️ Version comparison failed, but continuing..."
-          echo "📋 npm run compare-versions failed with exit code $?"
-          # Create a basic placeholder report
-          mkdir -p docs
-          echo "# AsyncLocalStorage Benchmark Results" > docs/index.md
-          echo "" >> docs/index.md
-          echo "No benchmark data available at this time." >> docs/index.md
-          echo "" >> docs/index.md
-          echo "Generated on: $(date -u)" >> docs/index.md
-        fi
-    
-    - name: Generate additional reports
-      run: |
-        echo "📝 Generating additional performance reports..."
-        # Note: We generate docs here for workflow validation, but don't include them in the release
-        if npm run generate-report; then
-          echo "📈 Additional reports generated successfully"
-          ls -la docs/
-        else
-          echo "⚠️ Report generation failed, but continuing..."
-          # Ensure we have at least some documentation
-          if [ ! -f "docs/index.md" ]; then
-            mkdir -p docs
-            echo "# AsyncLocalStorage Benchmark Results" > docs/index.md
-            echo "" >> docs/index.md
-            echo "No benchmark data available at this time." >> docs/index.md
-            echo "" >> docs/index.md
-            echo "Generated on: $(date -u)" >> docs/index.md
-          fi
-        fi
-    
-    - name: Upload comparison results
-      uses: actions/upload-artifact@v4
-      with:
-        name: version-comparison
-        path: |
-          public/results/
-          docs/
-        retention-days: 30
-
-  create-release:
-    runs-on: ubuntu-latest
-    needs: [compare-versions]
-    if: always() && github.ref == 'refs/heads/performance-test'
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Download comparison results
-      uses: actions/download-artifact@v4
-      with:
-        name: version-comparison
-        path: ./release-assets
-      continue-on-error: true
-    
-    - name: Debug release assets
-      run: |
-        echo "🔍 Debugging release assets before preparation..."
-        echo "Current directory: $(pwd)"
-        
-        echo "📁 Available directories and files:"
-        find . -maxdepth 3 -type d | sort
-        
-        if [ -d "./release-assets" ]; then
-          echo "✅ Release assets directory exists"
-          echo "📂 Contents of ./release-assets/:"
-          find ./release-assets -type f | head -20
-        else
-          echo "❌ No release-assets directory found"
-        fi
-        
-        # Check for any results directories
-        echo "🔍 Looking for any results directories:"
-        find . -name "*result*" -type d | head -10
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -436,168 +248,63 @@ jobs:
         # Create release directory
         mkdir -p release-package
         
-        echo "🔍 Checking for benchmark results in multiple locations..."
+        echo "🔍 Checking for benchmark results..."
         
         # Check all possible locations for results
         RESULTS_FOUND=false
         
-        # First check: release-assets/versions from download-artifact (this is where the data actually is!)
-        if [ -d "./release-assets/versions" ] && [ "$(ls -A ./release-assets/versions)" ]; then
-          echo "📂 Found results in ./release-assets/versions"
-          echo "📊 Copying version directories:"
-          ls -la ./release-assets/versions/
+        # Process downloaded artifacts
+        if [ -d "./downloaded-results" ]; then
+          echo "📂 Found results in ./downloaded-results"
+          echo "📊 Processing version directories:"
+          ls -la ./downloaded-results/
           
           mkdir -p release-package/results
-          cp -r ./release-assets/versions release-package/results/
           
-          # Also copy any loose files from release-assets root
-          echo "📄 Looking for loose JSON files in release-assets root:"
-          find ./release-assets -maxdepth 1 -name "*.json" | head -5
-          find ./release-assets -maxdepth 1 -name "*.json" -exec cp {} release-package/results/ \; 2>/dev/null || true
-          
-          echo "✅ Copied benchmark data to release package"
-          RESULTS_FOUND=true
-        # Second check: release-assets with full public/results structure
-        elif [ -d "./release-assets/public/results" ]; then
-          echo "📂 Found results in ./release-assets/public/results"
-          cp -r ./release-assets/public/results release-package/
-          echo "✅ Copied benchmark data to release package"
-          RESULTS_FOUND=true
-        elif [ -d "./release-assets/results" ]; then
-          echo "📂 Found results in ./release-assets/results"
-          cp -r ./release-assets/results release-package/
-          echo "✅ Copied benchmark data to release package"
-          RESULTS_FOUND=true
-        # Third check: local public/results (from compare-versions job)
-        elif [ -d "public/results" ] && [ "$(ls -A public/results)" ]; then
-          echo "📂 Found results in public/results"
-          cp -r public/results release-package/
-          echo "✅ Copied benchmark data to release package"
-          RESULTS_FOUND=true
-        # Fourth check: direct results directory
-        elif [ -d "results" ] && [ "$(ls -A results)" ]; then
-          echo "📂 Found results in results/"
-          cp -r results release-package/
-          echo "✅ Copied benchmark data to release package"
-          RESULTS_FOUND=true
-        fi
-        
-        # ALWAYS copy analysis files from docs directory if they exist (regardless of which path was used)
-        if [ -d "./release-assets/docs" ]; then
-          echo "📊 Found docs directory in release assets, copying analysis files:"
-          ls -la ./release-assets/docs/
-          
-          # Copy key analysis files
-          for file in "version-comparison.json" "detailed-results.json" "chart-data.json" "version-comparison.html" "index.html"; do
-            if [ -f "./release-assets/docs/$file" ]; then
-              echo "📋 Copying docs/$file to release"
-              cp "./release-assets/docs/$file" "release-package/results/"
+          for artifact_dir in downloaded-results/*/; do
+            if [ -d "$artifact_dir" ]; then
+              artifact_name=$(basename "$artifact_dir")
+              echo "📦 Processing artifact: $artifact_name"
+              
+              # Extract version from artifact name (benchmark-results-node-X.Y.Z)
+              version_name=$(echo "$artifact_name" | sed 's/benchmark-results-node-//')
+              target_dir="release-package/results/node_$version_name"
+              
+              echo "📁 Target directory: $target_dir"
+              mkdir -p "$target_dir"
+              
+              # Copy all contents from artifact to target directory
+              if [ -d "$artifact_dir" ] && [ "$(ls -A "$artifact_dir")" ]; then
+                echo "📂 Copying contents from artifact..."
+                cp -r "$artifact_dir"/* "$target_dir/" 2>/dev/null || true
+              fi
+              
+              echo "✅ Copied to: $target_dir"
+              ls -la "$target_dir" || echo "Target directory is empty"
             fi
           done
           
-          echo "✅ Copied analysis files to release package"
+          echo "✅ Copied benchmark data to release package"
+          RESULTS_FOUND=true
         else
-          echo "⚠️ No docs directory found in release assets"
+          echo "⚠️ No downloaded artifacts found"
         fi
         
-        # Also check local docs directory as backup
-        if [ -d "docs" ]; then
-          echo "📊 Looking for analysis files in local docs directory:"
-          ls -la docs/*.json 2>/dev/null || echo "No JSON files in docs/"
-          
-          # Copy key analysis files
-          for file in "version-comparison.json" "detailed-results.json" "chart-data.json"; do
-            if [ -f "docs/$file" ]; then
-              echo "📋 Copying local docs/$file to release"
-              cp "docs/$file" "release-package/results/"
-            fi
-          done
-          
-          # Also copy HTML files for completeness
-          for file in "version-comparison.html" "index.html"; do
-            if [ -f "docs/$file" ]; then
-              echo "📋 Copying local docs/$file to release"
-              cp "docs/$file" "release-package/results/"
-            fi
-          done
-          
-          echo "✅ Copied local analysis files to release package"
+        if [ "$RESULTS_FOUND" = false ]; then
+          echo "❌ No benchmark results found, creating placeholder structure..."
+          mkdir -p release-package/results/placeholder
+          echo '{"message": "No benchmark data available", "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > release-package/results/placeholder/placeholder.json
         fi
         
-        if [ "$RESULTS_FOUND" = "false" ]; then
-          echo "⚠️ No benchmark results found in any expected location!"
-          echo "📋 Available directories:"
-          find . -maxdepth 3 -type d -name "*result*" -o -name "*benchmark*" | head -10
-          
-          # Create placeholder structure so release isn't completely empty
-          mkdir -p release-package/results/versions
-          echo '{"error": "No benchmark data found", "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'", "workflow_run": "'${{ github.run_id }}'"}' > release-package/results/no-data.json
-        fi
+        # Create manifest
+        echo "📝 Creating release manifest..."
         
-        echo "📁 Copying both benchmark results and analysis files"
-        
-        # Verify we have actual data
-        echo "📊 Checking release package contents..."
-        if [ -d "release-package/results/versions" ]; then
-          echo "Found results in release package:"
-          ls -la release-package/results/versions/
-          
-          # Count actual data files
-          TOTAL_FILES=0
-          for version_dir in release-package/results/versions/node_*; do
-            if [ -d "$version_dir" ]; then
-              FILE_COUNT=$(find "$version_dir" -type f | wc -l)
-              TOTAL_FILES=$((TOTAL_FILES + FILE_COUNT))
-              echo "  $version_dir: $FILE_COUNT files"
-            fi
-          done
-          echo "Total data files: $TOTAL_FILES"
-        else
-          echo "⚠️ No results found in release package!"
-        fi
-        
-        # Create a summary file
-        {
-          echo "# AsyncLocalStorage Benchmark Results"
-          echo ""
-          echo "Generated on: $(date -u)"
-          echo ""
-          echo "## Contents"
-          echo "- results/versions/ - Raw benchmark data for each Node.js version"
-          echo "- results/version-comparison.json - Cross-version performance comparison"
-          echo "- results/detailed-results.json - Detailed analysis and statistics"
-          echo "- results/chart-data.json - Data formatted for visualization"
-          echo "- results/version-comparison.html - HTML version of the comparison report"
-          echo ""
-          echo "## Usage"
-          echo "Download this release and extract the contents to use with the async-node-stats application."
-          echo "The HTML documentation is generated during site build and is not included in this release."
-          echo ""
-          echo "## Node.js Versions Tested"
-          find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/- /' || echo "- No versions found"
-          echo ""
-          echo "## Analysis Files"
-          echo "The following analysis files are included if available:"
-          for file in version-comparison.json detailed-results.json chart-data.json version-comparison.html; do
-            if [ -f "release-package/results/$file" ]; then
-              echo "- ✅ $file"
-            else
-              echo "- ❌ $file (not generated)"
-            fi
-          done
-        } > release-package/README.md
-        
-        # Create a JSON manifest
-        NODE_VERSIONS=$(find release-package/results/versions -maxdepth 1 -type d -name "node_*" | sort | sed 's|.*/||' | sed 's/^/    "/' | sed 's/$/",/' | sed '$ s/,$//' || echo '    "none"')
+        # Count total files and calculate size
+        TOTAL_FILES=$(find release-package -type f | wc -l)
         TOTAL_SIZE=$(du -sh release-package | cut -f1)
         
-        # Check which analysis files are available
-        ANALYSIS_FILES=()
-        for file in "version-comparison.json" "detailed-results.json" "chart-data.json" "version-comparison.html"; do
-          if [ -f "release-package/results/$file" ]; then
-            ANALYSIS_FILES+=("\"$file\"")
-          fi
-        done
+        # Get list of Node.js versions
+        NODE_VERSIONS=$(find release-package/results -maxdepth 1 -name "node_*" -type d | sed 's|.*/node_||' | sort | tr '\n' ' ' | sed 's/ $//')
         
         {
           echo "{"
@@ -609,10 +316,7 @@ jobs:
           echo "  \"totalSize\": \"$TOTAL_SIZE\","
           echo "  \"workflowRun\": \"${{ github.run_id }}\","
           echo "  \"dataFiles\": $TOTAL_FILES,"
-          echo "  \"analysisFiles\": ["
-          echo "    $(IFS=,; echo "${ANALYSIS_FILES[*]}")"
-          echo "  ],"
-          echo "  \"note\": \"This release contains raw benchmark data and analysis files. HTML documentation is generated during site build.\""
+          echo "  \"note\": \"This release contains raw benchmark data and analysis files.\""
           echo "}"
         } > release-package/manifest.json
         
@@ -637,7 +341,7 @@ jobs:
       with:
         tag_name: ${{ steps.prepare_release.outputs.release_tag }}
         release_name: "Benchmark Results - ${{ steps.prepare_release.outputs.release_tag }}"
-        body: "## AsyncLocalStorage Benchmark Results\n\nThis release contains the latest benchmark results for AsyncLocalStorage performance across different Node.js versions.\n\n### What's Included\n- Raw benchmark data for each tested Node.js version\n- Memory profiling results\n- Performance metrics and timing data\n\n### What's NOT Included\n- Documentation (generated during site build)\n- Generated reports (created dynamically)\n- Static HTML/CSS files\n\n### Generated On\n${{ steps.prepare_release.outputs.generated_at }}\n\n### Workflow Run\n[${{ github.workflow }} #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n### Usage\nDownload the `benchmark-results.tar.gz` file and extract it to use with the async-node-stats application.\n\nThe deploy workflow will automatically download and use the latest release for building the site."
+        body: "## AsyncLocalStorage Benchmark Results\n\nThis release contains the latest benchmark results for AsyncLocalStorage performance across different Node.js versions.\n\n### What's Included\n- Raw benchmark data for each tested Node.js version\n- Memory profiling results\n- Performance metrics and timing data\n\n### Generated On\n${{ steps.prepare_release.outputs.generated_at }}\n\n### Workflow Run\n[${{ github.workflow }} #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n### Usage\nDownload the `benchmark-results.tar.gz` file and extract it to use with the async-node-stats application."
         draft: false
         prerelease: false
     
