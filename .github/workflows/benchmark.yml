@@ -139,7 +139,7 @@ jobs:
           
           # Check what was generated
           echo "📁 Benchmark results generated:"
-          find results/ -name "*.json" -type f | head -10
+          find public/results/ -name "*.json" -type f | head -10
           
           # Set output for next steps
           echo "benchmark_success=true" >> $GITHUB_OUTPUT
@@ -172,7 +172,7 @@ jobs:
           
           # Check what was generated
           echo "📁 Memory test results generated:"
-          find results/ -name "*memory*" -type f | head -10
+          find public/results/ -name "*memory*" -type f | head -10
           
           # Set output for next steps
           echo "memory_test_success=true" >> $GITHUB_OUTPUT
@@ -186,7 +186,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: benchmark-results-node-${{ matrix.node-version }}
-        path: results/
+        path: public/results/
         retention-days: 30
 
   create-release:
