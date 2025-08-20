@@ -11,9 +11,14 @@
     "memory-test-verbose": "node --max-old-space-size=8192 --expose-gc --trace-gc --trace-gc-verbose src/memory-test.js",
     "test-all": "npm run benchmark && npm run memory-test",
     "test-all-optimized": "npm run benchmark-optimized && npm run memory-test-verbose",
+    "test-setup": "node scripts/test-setup.js",
     "validate-versions": "node scripts/validate-versions.js",
     "get-versions": "node scripts/get-node-versions.js",
     "multi-iteration": "node scripts/run-multi-iterations.js",
+    "all-versions": "node scripts/run-all-versions.js",
+    "compare-versions": "node src/version-comparison.js",
+    "generate-report": "node src/report-generator.js",
+    "build": "echo \"Build script placeholder - customize for your deployment needs\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
