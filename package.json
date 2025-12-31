@@ -1,6 +1,6 @@
 {
   "name": "async-node-stats",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Performance benchmarks for AsyncLocalStorage overhead analysis across Node.js versions",
   "type": "module",
   "scripts": {
