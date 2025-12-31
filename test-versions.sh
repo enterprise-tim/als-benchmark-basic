@@ -7,9 +7,9 @@
 #
 # Usage:
 #   ./test-versions.sh                    # Test comprehensive set of versions (1 iteration)
-#   ./test-versions.sh 24.6.0             # Test a single version (1 iteration)
+#   ./test-versions.sh 24.12.0             # Test a single version (1 iteration)
 #   ./test-versions.sh --iterations 5     # Test all versions with 5 iterations each
-#   ./test-versions.sh 24.6.0 --iterations 3  # Test single version with 3 iterations
+#   ./test-versions.sh 24.12.0 --iterations 3  # Test single version with 3 iterations
 
 set -e
 
@@ -83,15 +83,15 @@ show_help() {
     echo "Usage: $0 [version] [--iterations N] [--help]"
     echo ""
     echo "Options:"
-    echo "  [version]           Test a specific Node.js version (e.g., 24.6.0)"
+    echo "  [version]           Test a specific Node.js version (e.g., 24.12.0)"
     echo "  --iterations N      Run N iterations of each version (default: 1)"
     echo "  --help, -h          Show this help message"
     echo ""
     echo "Examples:"
     echo "  $0                           # Test all versions from config (1 iteration)"
-    echo "  $0 24.6.0                   # Test only Node.js 24.6.0 (1 iteration)"
+    echo "  $0 24.12.0                   # Test only Node.js 24.12.0 (1 iteration)"
     echo "  $0 --iterations 5           # Test all versions with 5 iterations each"
-    echo "  $0 24.6.0 --iterations 3   # Test Node.js 24.6.0 with 3 iterations"
+    echo "  $0 24.12.0 --iterations 3   # Test Node.js 24.12.0 with 3 iterations"
     echo "  $0 --help                    # Show this help"
     echo ""
     echo "Available version sets in config/node-versions.json:"
@@ -132,16 +132,13 @@ load_versions() {
         echo -e "${YELLOW}Warning: config/node-versions.json not found, using fallback versions${NC}"
         VERSIONS=(
             "16.20.2"   # LTS - First version with AsyncLocalStorage stable
-            "18.19.1"   # LTS - Performance improvements and debugger context loss fixes
-            "20.0.0"    # LTS - First 20.x release
-            "20.11.0"   # LTS - Enhanced async context handling and nested context fixes
-            "21.0.0"    # Current - First 21.x release
-            "21.7.3"    # Current - Continued optimization for high-concurrency scenarios
-            "22.0.0"    # Latest - Foundation for major performance overhaul
-            "22.18.0"   # Latest 22.x - Latest stable in 22.x series
-            "23.0.0"    # Current - First 23.x release
-            "24.0.0"    # Latest LTS - First 24.x release with AsyncContextFrame
-            "24.6.0"    # Latest LTS - Revolutionary AsyncContextFrame implementation
+            "18.20.5"   # EOL - Final release version
+            "20.18.1"   # Maintenance LTS - Enhanced async context handling
+            "21.7.3"    # EOL - Continued optimization for high-concurrency scenarios
+            "22.18.0"   # Maintenance LTS - Performance overhaul foundation
+            "23.9.0"    # EOL - Final release in 23.x series
+            "24.12.0"   # Active LTS - Revolutionary AsyncContextFrame implementation
+            "25.2.1"    # Current - Latest release with experimental features
         )
         echo -e "${YELLOW}Using fallback hardcoded versions (${#VERSIONS[@]} versions)${NC}"
     fi

@@ -1,5 +1,6 @@
 # Docker container for isolated AsyncLocalStorage performance testing
-FROM node:22-slim
+ARG NODE_VERSION=22
+FROM node:${NODE_VERSION}-slim
 
 # Install system dependencies for performance testing
 RUN apt-get update && apt-get install -y \

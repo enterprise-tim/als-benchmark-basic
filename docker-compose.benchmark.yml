@@ -140,6 +140,29 @@ services:
         hard: 65536
     command: ["node", "--max-old-space-size=4096", "--expose-gc", "--no-compilation-cache", "--predictable", "src/benchmark.js"]
 
+  benchmark-node25:
+    build:
+      context: .
+      dockerfile: Dockerfile.benchmark
+      args:
+        NODE_VERSION: "25"
+    image: async-node-stats:node25
+    container_name: benchmark-node25
+    volumes:
+      - ./results:/app/results
+      - ./src:/app/src:ro
+    environment:
+      - NODE_ENV=production
+      - NODE_OPTIONS=--max-old-space-size=4096 --no-warnings
+      - UV_THREADPOOL_SIZE=32
+    cpus: 2
+    memory: 4g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    command: ["node", "--max-old-space-size=4096", "--expose-gc", "--no-compilation-cache", "--predictable", "src/benchmark.js"]
+
   # Statistical analysis service
   analyzer:
     build:
@@ -161,3 +184,4 @@ services:
       - benchmark-node20
       - benchmark-node22
       - benchmark-node24
+      - benchmark-node25

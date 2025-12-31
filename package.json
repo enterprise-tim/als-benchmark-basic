@@ -19,7 +19,9 @@
     "compare-versions": "node src/version-comparison.js",
     "generate-report": "node src/report-generator.js",
     "build": "echo \"Build script placeholder - customize for your deployment needs\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepublishOnly": "npm run validate-versions && npm run test",
+    "precommit": "npm run validate-versions",
+    "test": "node scripts/validate-versions.js"
   },
   "dependencies": {
     "benchmark": "^2.1.4"

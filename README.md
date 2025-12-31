@@ -10,7 +10,7 @@ This project provides comprehensive performance analysis of AsyncLocalStorage ac
 
 - **Performance Analysis**: Compare AsyncLocalStorage overhead across Node.js versions
 - **Memory Analysis**: Analyze memory usage patterns and detect potential leaks
-- **Version Comparison**: Compare results across Node.js 16.20.2 through 24.6.0
+- **Version Comparison**: Compare results across Node.js 16.20.2 through 25.2.1
 - **Automated Testing**: GitHub Actions workflow for continuous benchmark execution
 - **Release Management**: Automatic release creation with benchmark results
 
@@ -90,7 +90,7 @@ Each benchmark file contains:
 
 ```json
 {
-  "nodeVersion": "v24.6.0",
+  "nodeVersion": "v24.12.0",
   "platform": "darwin",
   "arch": "arm64",
   "timestamp": "2025-08-16T13:57:48.747Z",
@@ -113,7 +113,7 @@ Each memory file contains:
 
 ```json
 {
-  "nodeVersion": "v24.6.0",
+  "nodeVersion": "v24.12.0",
   "memoryTests": [
     {
       "objectSizeKB": 1,
